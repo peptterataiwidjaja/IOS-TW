@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 12mm 10mm;
+  }
+
+  /* Reset body and all ancestral containers */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Critical: remove flexbox and overflow clipping from all ancestor elements */
+  #root,
+  #root > div,
+  .min-h-screen,
+  main,
+  div[class*="overflow-"],
+  div[class*="flex-col"] {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    float: none !important;
+  }
+
+  header, nav, footer, .no-print, .print-hide, .print\:hidden {
+    display: none !important;
+  }
+
+  .print-only, .print\:block {
+    display: block !important;
+  }
+
+  /* Multi-page table layout rules */
+  table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  tbody {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  th, td {
+    border-color: #000000 !important;
+    color: #000000 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Keep signatures and metadata blocks intact without breaking across sheets */
+  .avoid-break, [data-avoid-break] {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Modal print container resets */
+  #printable-pdf-document {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+}
+

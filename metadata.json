@@ -1,0 +1,8 @@
+{
+  "name": "IOS TW",
+  "description": "Sistem Manajemen Terintegrasi Produksi, Gudang, PPIC, Subkon \u0026 Arus Kas Operasional PT Teratai Widjaja dengan Pelaporan Spreadsheet Real-time.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
