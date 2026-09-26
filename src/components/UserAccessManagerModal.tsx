@@ -175,10 +175,7 @@ export const UserAccessManagerModal: React.FC = () => {
     setShowPassword(true);
   };
 
-  const handleDeleteUser = (userId: string, userName: string) => {
-    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus akun "${userName}"?`);
-    if (!confirmDelete) return;
-
+  const handleDeleteUser = (userId: string) => {
     const res = deleteUser(userId);
     if (res.success) {
       setStatusMessage(res.message);
@@ -398,10 +395,10 @@ export const UserAccessManagerModal: React.FC = () => {
                         </label>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-slate-400 font-mono">ID: {targetUser.id}</span>
-                          {targetUser.id !== 'user-pe-01' && targetUser.id !== currentUser.id && (
+                          {targetUser.id !== 'usr-pe' && targetUser.id !== currentUser.id && (
                             <button
                               type="button"
-                              onClick={() => handleDeleteUser(targetUser.id, targetUser.name)}
+                              onClick={() => handleDeleteUser(targetUser.id)}
                               className="text-[11px] text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors flex items-center gap-1 cursor-pointer"
                               title="Hapus Akun"
                             >
@@ -455,21 +452,10 @@ export const UserAccessManagerModal: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Password Saat Ini Display */}
+                        {/* Password Saat Ini Disembunyikan */}
                         <div className="flex items-center gap-1.5 text-xs bg-white px-2.5 py-1 rounded-lg border border-slate-200">
-                          <span className="text-slate-500 text-[10px]">Sandi Saat Ini:</span>
-                          <span className="font-mono font-bold text-slate-800">
-                            {showCurrentPassword 
-                              ? (targetUser.password || `${targetUser.username}123`) 
-                              : '••••••'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className="text-slate-400 hover:text-slate-700 cursor-pointer"
-                          >
-                            {showCurrentPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                          </button>
+                          <span className="text-slate-500 text-[10px]">Sandi:</span>
+                          <span className="font-mono font-bold text-slate-800">••••••</span>
                         </div>
                       </div>
 

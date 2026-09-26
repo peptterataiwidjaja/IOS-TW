@@ -30,15 +30,15 @@ import {
 interface AppContextType {
   // Authentication
   isAuthenticated: boolean;
-  login: (username: string) => { success: boolean; message: string };
+  login: (username: string, password?: string) => { success: boolean; message: string };
   logout: () => void;
   currentUser: UserAccount;
   setCurrentUser: (user: UserAccount) => void;
   users: UserAccount[];
 
   // PE User Management
-  updateUserName: (userId: string, newName: string) => void;
-  updateUserPermissions: (userId: string, allowedTabs: string[]) => void;
+  updateUserName: (userId: string, newName: string, newUsername?: string, newDepartment?: string) => { success: boolean; message: string };
+  updateUserPermissions: (userId: string, allowedTabs: string[]) => { success: boolean; message: string };
   updateUserPassword: (userId: string, newPass: string) => { success: boolean; message: string };
   addNewUser: (params: {
     name: string;
@@ -181,16 +181,19 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const savedAuth = localStorage.getItem('pt_tw_auth');
+    const savedAuth = localStorage.getItem('pt_tw_auth_v4');
     return savedAuth === 'true';
   });
 
   // Users state with PE customization persistence
   const [users, setUsers] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('pt_tw_users_v3');
+    const saved = localStorage.getItem('pt_tw_users_v4');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: UserAccount[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       } catch (e) {
         console.error(e);
       }
@@ -199,11 +202,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
-    const savedUser = localStorage.getItem('pt_tw_user');
+    const savedUser = localStorage.getItem('pt_tw_user_v4');
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
-        const match = users.find(u => u.id === parsed.id);
+        const match = users.find(u => u.id === parsed.id || u.username.toLowerCase() === parsed.username?.toLowerCase());
         if (match) return match;
       } catch (e) {
         console.error(e);
@@ -317,15 +320,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('pt_tw_auth', isAuthenticated ? 'true' : 'false');
+    localStorage.setItem('pt_tw_auth_v4', isAuthenticated ? 'true' : 'false');
   }, [isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem('pt_tw_users_v3', JSON.stringify(users));
+    localStorage.setItem('pt_tw_users_v4', JSON.stringify(users));
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('pt_tw_user', JSON.stringify(currentUser));
+    localStorage.setItem('pt_tw_user_v4', JSON.stringify(currentUser));
   }, [currentUser]);
 
   useEffect(() => {
@@ -467,88 +470,182 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return warnings.sort((a, b) => a.daysUntilDeadline - b.daysUntilDeadline);
   }, [subconTasks]);
 
-  // Login handler (no password required on initial login)
-  const login = (username: string) => {
+  // Login handler (requires username and password)
+  const login = (username: string, password?: string) => {
     const cleanUsername = username.trim().toLowerCase();
-    const found = users.find(
-      u => u.username.toLowerCase() === cleanUsername
-    );
+    const cleanPassword = (password || '').trim();
+
+    if (!cleanUsername || !cleanPassword) {
+      return { success: false, message: 'Silakan masukkan User dan Password terlebih dahulu!' };
+    }
+
+    const found = users.find(u => {
+      const uname = u.username.toLowerCase();
+      if (uname === cleanUsername) return true;
+      // Support 'pe' or 'pe_admin' for the PE account
+      if (u.role === 'PE' && (cleanUsername === 'pe' || cleanUsername === 'pe_admin')) return true;
+      return false;
+    });
 
     if (!found) {
-      return { success: false, message: 'Username tidak terdaftar dalam sistem!' };
+      return { success: false, message: 'User / Username tidak ditemukan dalam sistem!' };
+    }
+
+    const expectedPass = found.password || (found.role === 'PE' ? 'pe123' : `${found.username.toLowerCase()}123`);
+    const isPeDefaultPass = found.role === 'PE' && cleanPassword === 'pe123' && (expectedPass === 'pe123' || expectedPass === 'teratai123');
+
+    if (cleanPassword !== expectedPass && !isPeDefaultPass) {
+      return { success: false, message: 'Password yang Anda masukkan tidak sesuai!' };
     }
 
     setCurrentUser(found);
     setIsAuthenticated(true);
-    // Ensure activeTab is one of allowed tabs
-    if (!found.allowedTabs.includes(activeTab) && found.role !== 'PE') {
-      setActiveTab(found.allowedTabs[0] || 'pe-workflow');
+
+    // Route user to appropriate allowed tab
+    if (found.role === 'SUBCON') {
+      setActiveTab('subcon');
+    } else if (found.role === 'PE') {
+      if (!found.allowedTabs.includes(activeTab) && activeTab !== 'user-access') {
+        setActiveTab('pe-workflow');
+      }
+    } else {
+      if (!found.allowedTabs.includes(activeTab)) {
+        setActiveTab(found.allowedTabs[0] || 'pe-workflow');
+      }
     }
 
-    return { success: true, message: `Selamat datang kembali, ${found.name} (${found.role})!` };
+    return { success: true, message: `Selamat datang, ${found.name} (${found.role})!` };
   };
 
   const logout = () => {
     setIsAuthenticated(false);
   };
 
-  // Check tab permissions (Input Model Baru & Akses Akun tab are accessible to all logged-in users; Subcon focuses on subcon tab)
+  // Check tab permissions:
+  // - Bar 'user-access' (Akses Akun) is strictly reserved for PE (or if PE explicitly assigns 'user-access' to a user)
+  // - Other bars are governed by the allowedTabs configured by PE for each user
   const isTabAllowed = (tabId: string): boolean => {
     if (tabId === 'user-access') {
-      return true;
+      return currentUser.role === 'PE' || currentUser.allowedTabs.includes('user-access');
+    }
+    if (currentUser.role === 'PE') {
+      return currentUser.allowedTabs.includes(tabId) || tabId === 'user-access';
     }
     if (currentUser.role === 'SUBCON') {
       return currentUser.allowedTabs.includes(tabId) || tabId === 'subcon';
     }
-    if (tabId === 'new-style') {
-      return true;
-    }
-    if (currentUser.role === 'PE') return true; // PE has full administrative access
     return currentUser.allowedTabs.includes(tabId);
   };
 
-  // PE User Management: Rename user (Strictly PE Only)
-  const updateUserName = (userId: string, newName: string) => {
+  // PE User Management: Rename user & optionally update username/department (Strictly PE Only)
+  const updateUserName = (
+    userId: string,
+    newName: string,
+    newUsername?: string,
+    newDepartment?: string
+  ): { success: boolean; message: string } => {
     if (currentUser.role !== 'PE') {
-      alert('Akses Ditolak: Hanya Production Engineer (PE) yang memiliki otoritas mengubah nama pengguna!');
-      return;
+      return {
+        success: false,
+        message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak mengubah data pengguna!'
+      };
     }
+
+    const cleanName = newName.trim();
+    if (!cleanName) {
+      return { success: false, message: 'Nama pengguna tidak boleh kosong!' };
+    }
+
+    const cleanUname = newUsername !== undefined ? newUsername.trim() : undefined;
+    if (cleanUname !== undefined && !cleanUname) {
+      return { success: false, message: 'Username login tidak boleh kosong!' };
+    }
+
+    if (cleanUname !== undefined) {
+      const duplicate = users.some(
+        u => u.id !== userId && u.username.toLowerCase() === cleanUname.toLowerCase()
+      );
+      if (duplicate) {
+        return { success: false, message: `Username "${cleanUname}" sudah digunakan oleh akun lain!` };
+      }
+    }
+
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
-        return { ...u, name: newName };
+        return {
+          ...u,
+          name: cleanName,
+          username: cleanUname !== undefined ? cleanUname : u.username,
+          department: newDepartment !== undefined ? newDepartment.trim() : u.department
+        };
       }
       return u;
     }));
 
     if (currentUser.id === userId) {
-      setCurrentUser(prev => ({ ...prev, name: newName }));
+      setCurrentUser(prev => ({
+        ...prev,
+        name: cleanName,
+        username: cleanUname !== undefined ? cleanUname : prev.username,
+        department: newDepartment !== undefined ? newDepartment.trim() : prev.department
+      }));
     }
+
+    // Also keep Subcon tasks synced if a subcon account is updated
+    setSubconTasks(prev => prev.map(task => {
+      if (task.subconAccountId === userId) {
+        return {
+          ...task,
+          subconName: cleanName,
+          subconUsername: cleanUname !== undefined ? cleanUname : task.subconUsername
+        };
+      }
+      return task;
+    }));
+
+    return {
+      success: true,
+      message: `Data profil akun "${cleanName}" berhasil diperbarui!`
+    };
   };
 
   // PE User Management: Update allowed navigation bars/tabs (Strictly PE Only)
-  const updateUserPermissions = (userId: string, allowedTabs: string[]) => {
+  const updateUserPermissions = (userId: string, allowedTabs: string[]): { success: boolean; message: string } => {
     if (currentUser.role !== 'PE') {
-      alert('Akses Ditolak: Hanya Production Engineer (PE) yang memiliki otoritas mengatur hak akses menu bar!');
-      return;
+      return {
+        success: false,
+        message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak mengatur akses bar!'
+      };
     }
+
+    const target = users.find(u => u.id === userId);
+    const finalTabs = target?.role === 'PE' && !allowedTabs.includes('user-access')
+      ? [...allowedTabs, 'user-access']
+      : allowedTabs;
+
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
-        return { ...u, allowedTabs };
+        return { ...u, allowedTabs: finalTabs };
       }
       return u;
     }));
 
     if (currentUser.id === userId) {
-      setCurrentUser(prev => ({ ...prev, allowedTabs }));
+      setCurrentUser(prev => ({ ...prev, allowedTabs: finalTabs }));
     }
+
+    return {
+      success: true,
+      message: `Akses bar menu untuk "${target?.name || 'Akun'}" berhasil disimpan (${finalTabs.length} bar aktif)!`
+    };
   };
 
-  // PE User Management: Change / Reset Password for other accounts (Strictly PE Only)
+  // PE User Management: Change / Reset Password for accounts (Strictly PE Only)
   const updateUserPassword = (userId: string, newPass: string): { success: boolean; message: string } => {
     if (currentUser.role !== 'PE') {
       return { 
         success: false, 
-        message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak mengganti password untuk akun lain!' 
+        message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak mengganti password akun!' 
       };
     }
 
@@ -557,8 +654,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: 'Password baru tidak boleh kosong!' };
     }
 
-    if (cleanPass.length < 4) {
-      return { success: false, message: 'Password minimal terdiri dari 4 karakter!' };
+    if (cleanPass.length < 3) {
+      return { success: false, message: 'Password minimal terdiri dari 3 karakter!' };
     }
 
     const target = users.find(u => u.id === userId);
@@ -577,9 +674,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(prev => ({ ...prev, password: cleanPass }));
     }
 
+    // Sync password if linked to subcon task
+    setSubconTasks(prev => prev.map(t => {
+      if (t.subconAccountId === userId) {
+        return { ...t, subconPassword: cleanPass };
+      }
+      return t;
+    }));
+
     return { 
       success: true, 
-      message: `Password untuk akun "${target.name}" (${target.username}) berhasil diperbarui menjadi "${cleanPass}"!` 
+      message: `Password untuk akun "${target.name}" (@${target.username}) berhasil diperbarui!` 
     };
   };
 
@@ -597,9 +702,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak menambahkan akun!' };
     }
 
-    const cleanUsername = params.username.trim().toLowerCase();
+    const cleanUsername = params.username.trim();
     if (!cleanUsername) {
-      return { success: false, message: 'Username wajib diisi!' };
+      return { success: false, message: 'User / Username login wajib diisi!' };
     }
 
     const cleanName = params.name.trim();
@@ -607,12 +712,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: 'Nama lengkap pengguna wajib diisi!' };
     }
 
-    const isDuplicate = users.some(u => u.username.toLowerCase() === cleanUsername);
+    const isDuplicate = users.some(u => u.username.toLowerCase() === cleanUsername.toLowerCase());
     if (isDuplicate) {
-      return { success: false, message: `Username "${params.username}" sudah dipakai oleh akun lain. Gunakan username berbeda!` };
+      return { success: false, message: `User "${cleanUsername}" sudah dipakai oleh akun lain. Gunakan username berbeda!` };
     }
 
-    const assignedPassword = params.password?.trim() || `${cleanUsername}123`;
+    const assignedPassword = params.password?.trim() || `${cleanUsername.toLowerCase()}123`;
 
     const newUser: UserAccount = {
       id: `user-${Date.now()}`,
@@ -621,7 +726,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: cleanName,
       role: params.role,
       department: params.department.trim() || 'Operasional Garment',
-      email: params.email?.trim() || `${cleanUsername}@terataiwidjaja.co.id`,
+      email: params.email?.trim() || `${cleanUsername.toLowerCase()}@terataiwidjaja.co.id`,
       allowedTabs: params.allowedTabs && params.allowedTabs.length > 0 
         ? params.allowedTabs 
         : ['pe-workflow']
@@ -630,23 +735,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers(prev => [...prev, newUser]);
     return { 
       success: true, 
-      message: `Akun "${newUser.name}" (${newUser.username}) dengan password "${assignedPassword}" berhasil ditambahkan ke sistem!` 
+      message: `Akun baru "${newUser.name}" (User: ${newUser.username}) berhasil ditambahkan dan siap digunakan untuk login!` 
     };
   };
 
   // PE User Management: Delete user account
   const deleteUser = (userId: string): { success: boolean; message: string } => {
     if (currentUser.role !== 'PE') {
-      return { success: false, message: 'Hanya Production Engineer (Admin PE) yang berhak menghapus akun!' };
+      return { success: false, message: 'Hanya Production Engineer (PE) yang berhak menghapus akun!' };
     }
 
-    if (userId === 'user-pe-01' || userId === currentUser.id) {
-      return { success: false, message: 'Akun Super Admin PE utama / akun yang sedang aktif tidak dapat dihapus!' };
+    if (userId === 'usr-pe' || userId === currentUser.id) {
+      return { success: false, message: 'Akun Utama PE yang sedang aktif tidak dapat dihapus!' };
     }
 
     const target = users.find(u => u.id === userId);
     setUsers(prev => prev.filter(u => u.id !== userId));
-    return { success: true, message: `Akun ${target?.name || ''} telah dihapus dari sistem!` };
+    return { success: true, message: `Akun "${target?.name || ''}" (@${target?.username || ''}) berhasil dihapus dari sistem!` };
   };
 
   // Add new Production Model / Style

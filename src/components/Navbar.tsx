@@ -15,7 +15,8 @@ import {
   Printer,
   Camera,
   PlusCircle,
-  UserCheck
+  UserCheck,
+  LogOut
 } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 
@@ -32,6 +33,7 @@ export const Navbar: React.FC = () => {
     setActiveTab,
     isTabAllowed,
     setIsLoginModalOpen,
+    logout,
     companyLogo,
     setCompanyLogo,
     openPrintModal,
@@ -173,11 +175,21 @@ export const Navbar: React.FC = () => {
               type="button"
               onClick={() => setIsLoginModalOpen(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 transition-colors cursor-pointer"
-              title="Ganti Akun Pengguna"
+              title="Ganti Akun Pengguna (User & Password)"
             >
               <UserCheck className="w-3.5 h-3.5 text-blue-700" />
               <span className="font-bold text-slate-900 max-w-[110px] truncate hidden sm:inline">{currentUser.name}</span>
               <span className="text-[11px] text-blue-700 font-semibold">({currentUser.role})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={logout}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-bold text-red-700 transition-colors cursor-pointer"
+              title="Keluar ke Layar Login"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Keluar</span>
             </button>
 
             <button

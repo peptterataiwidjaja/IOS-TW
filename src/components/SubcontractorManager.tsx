@@ -46,6 +46,7 @@ export const SubcontractorManager: React.FC = () => {
     subconWarnings,
     currentUser, 
     setCurrentUser,
+    setIsLoginModalOpen,
     users,
     openPrintModal 
   } = useApp();
@@ -450,7 +451,7 @@ export const SubcontractorManager: React.FC = () => {
                 <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-400 text-slate-950">
                   Akun Khusus Mitra Subkon Aktif
                 </span>
-                <span className="text-xs font-mono text-cyan-200">@{currentUser.username}</span>
+                <span className="text-xs font-mono text-cyan-200">User: {currentUser.username}</span>
               </div>
               <h2 className="text-sm font-black mt-0.5">
                 {currentUser.name} — Portal Laporan Target Harian Subkon
@@ -458,11 +459,11 @@ export const SubcontractorManager: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={handleSwitchBackToPE}
+            onClick={() => setIsLoginModalOpen(true)}
             className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
           >
             <UserCheck className="w-3.5 h-3.5 text-cyan-300" />
-            <span>Kembali ke Akun Admin PE (Analisis)</span>
+            <span>Ganti Akun (Login User &amp; Pass)</span>
           </button>
         </div>
       )}
@@ -484,10 +485,10 @@ export const SubcontractorManager: React.FC = () => {
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs text-emerald-100 pt-1">
               <span className="bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-700 font-mono">
-                Username: <strong className="text-white">{createdAccountBanner.username}</strong>
+                User: <strong className="text-white">{createdAccountBanner.username}</strong>
               </span>
               <span className="bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-700 font-mono">
-                Password: <strong className="text-white">{createdAccountBanner.password}</strong>
+                Password: <strong className="text-white">•••••• (Tersimpan)</strong>
               </span>
               <span className="bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-700">
                 Wajib Input Target: <strong className="text-white">{createdAccountBanner.dailyTarget} Pcs/Hari</strong>
@@ -1990,9 +1991,10 @@ export const SubcontractorManager: React.FC = () => {
                       <div>
                         <label className="block font-bold text-cyan-950 mb-1 text-[11px]">Password Akses *</label>
                         <input
-                          type="text"
+                          type="password"
                           value={newSubconPassword}
                           onChange={(e) => setNewSubconPassword(e.target.value)}
+                          placeholder="Masukkan password..."
                           className="w-full p-2 rounded-lg border border-cyan-300 bg-white font-mono font-bold text-slate-900"
                           required={createDedicatedAccount}
                         />

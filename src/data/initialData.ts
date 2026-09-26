@@ -13,36 +13,34 @@ import {
 
 export const ALL_NAV_TABS: NavTabPermission[] = [
   { id: 'new-style', label: 'Input Model Baru', description: 'Registrasi model/style produksi baru, target order, jadwal delivery & inisialisasi SOP/bahan' },
-  { id: 'pe-workflow', label: 'Alur SOP & PE', description: 'Monitoring 14 tahap SOP PE, tanggal aktual, breakdown mesin' },
-  { id: 'warehouse-stock', label: 'Stok Gudang', description: 'Katalog stok bahan baku, aksesoris, & input stok' },
-  { id: 'ppic-planning', label: 'Perencanaan PPIC', description: 'Alokasi komponen produksi (Line vs Subkon) & kebutuhan bahan baku (BOM)' },
-  { id: 'subcon', label: 'Mitra Subkon', description: 'Monitoring alur keluar-masuk bordir/sablon/washing' },
-  { id: 'transactions', label: 'Riwayat Transaksi & PIC', description: 'Pelacakan mutasi barang & penanggung jawab PIC' },
-  { id: 'spreadsheet', label: 'Pelaporan Spreed Sheet', description: 'Tampilan tabel terpadu mirip Google Sheet / Excel (.xlsx)' },
-  { id: 'analytics', label: 'Analitik Departemen', description: 'Grafik performa efisiensi produksi & gudang' },
-  { id: 'google-script', label: 'Integrasi Google Script', description: 'Sinkronisasi data real-time ke Google Sheet via Apps Script' },
-  { id: 'user-access', label: 'Manajemen Akses & Akun (PE)', description: 'Ubah nama pengguna & atur bar/menu yang bisa diakses akun lain' }
+  { id: 'pe-workflow', label: 'Alur SOP', description: 'Monitoring 14 tahap SOP PE, tanggal aktual, breakdown mesin' },
+  { id: 'ppic-planning', label: 'PPIC & BOM', description: 'Alokasi komponen produksi (Line vs Subkon) & kebutuhan bahan baku (BOM)' },
+  { id: 'warehouse-stock', label: 'Stok Gudang', description: 'Katalog stok bahan baku, aksesoris, keranjang ambil barang & input stok' },
+  { id: 'subcon', label: 'Mitra Subkon', description: 'Monitoring alur keluar-masuk subkon, portal input target harian & warning H-3' },
+  { id: 'transactions', label: 'Riwayat Mutasi', description: 'Pelacakan mutasi barang & penanggung jawab PIC' },
+  { id: 'spreadsheet', label: 'Spreadsheet', description: 'Tampilan tabel terpadu mirip Google Sheet / Excel (.xlsx)' },
+  { id: 'analytics', label: 'Analitik', description: 'Grafik performa efisiensi produksi, gudang & subkon' },
+  { id: 'user-access', label: 'Akses Akun', description: 'Khusus PE: Tambah/hapus akun, ganti nama pengguna & atur akses bar yang tersedia' }
 ];
 
 export const INITIAL_USERS: UserAccount[] = [
   {
     id: 'usr-pe',
-    username: 'pe_admin',
-    password: 'teratai123',
-    name: 'Budi Santoso, S.T.',
+    username: 'PE',
+    password: 'pe123',
+    name: 'Budi Santoso, S.T. (PE)',
     role: 'PE',
     department: 'Production Engineering',
     email: 'pe.terataiwidjaja@gmail.com',
     allowedTabs: [
       'new-style',
       'pe-workflow',
-      'warehouse-stock',
       'ppic-planning',
+      'warehouse-stock',
       'subcon',
       'transactions',
       'spreadsheet',
       'analytics',
-      'google-script',
       'user-access'
     ]
   },
@@ -57,8 +55,7 @@ export const INITIAL_USERS: UserAccount[] = [
     allowedTabs: [
       'warehouse-stock',
       'transactions',
-      'spreadsheet',
-      'google-script'
+      'spreadsheet'
     ]
   },
   {
@@ -70,14 +67,14 @@ export const INITIAL_USERS: UserAccount[] = [
     department: 'Plant & Factory Management',
     email: 'factory.manager@terataiwidjaja.co.id',
     allowedTabs: [
+      'new-style',
       'pe-workflow',
       'warehouse-stock',
       'ppic-planning',
       'subcon',
       'transactions',
       'spreadsheet',
-      'analytics',
-      'google-script'
+      'analytics'
     ]
   },
   {
@@ -89,12 +86,12 @@ export const INITIAL_USERS: UserAccount[] = [
     department: 'PPIC & Inventory Control',
     email: 'ppic@terataiwidjaja.co.id',
     allowedTabs: [
+      'new-style',
       'ppic-planning',
       'warehouse-stock',
       'transactions',
       'spreadsheet',
-      'analytics',
-      'google-script'
+      'analytics'
     ]
   },
   {

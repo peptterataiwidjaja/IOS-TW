@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ALL_NAV_TABS } from '../data/initialData';
 import { UserRole } from '../types';
@@ -17,14 +17,10 @@ import {
   Check, 
   AlertCircle, 
   Users, 
-  Building2,
-  Briefcase,
   CheckCircle2,
-  Sparkles,
   FileSpreadsheet,
   Printer,
   Upload,
-  Camera,
   RotateCcw,
   ExternalLink,
   CheckCircle,
@@ -56,8 +52,8 @@ export const UserAccessManagerView: React.FC = () => {
 
   const isPE = currentUser.role === 'PE';
 
-  // Navigation sub-tabs inside Akses & Akun
-  const [mainSubTab, setMainSubTab] = useState<'profile' | 'spreadsheet' | 'logo' | 'pe-permissions'>('profile');
+  // Default directly to PE account & bar management tab
+  const [mainSubTab, setMainSubTab] = useState<'pe-permissions' | 'profile' | 'spreadsheet' | 'logo'>('pe-permissions');
 
   // Sub-tab inside PE Permissions: 'manage' or 'create'
   const [peSubTab, setPeSubTab] = useState<'manage' | 'create'>('manage');
@@ -68,15 +64,20 @@ export const UserAccessManagerView: React.FC = () => {
   );
   const targetUser = users.find(u => u.id === selectedUserId) || users[0];
 
-  // State for Editing Name
+  // State for Editing Name, Username, Department
   const [editingName, setEditingName] = useState<string>('');
+  const [editingUsername, setEditingUsername] = useState<string>('');
+  const [editingDepartment, setEditingDepartment] = useState<string>('');
 
   // State for Editing Permissions (Menu Tabs)
   const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
 
-  // State for Changing Password (Strictly PE Only)
+  // State for Changing Password (PE Only - Masked by default, never exposing all passwords)
   const [newPassword, setNewPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
+
+  // Inline delete confirmation state (avoids window.confirm in iframe)
+  const [confirmDeleteUserId, setConfirmDeleteUserId] = useState<string | null>(null);
 
   // Status and Error notifications
   const [statusMessage, setStatusMessage] = useState<string>('');
@@ -86,12 +87,14 @@ export const UserAccessManagerView: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newInitialPassword, setNewInitialPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [newRole, setNewRole] = useState<UserRole>('PRODUCTION');
   const [newDepartment, setNewDepartment] = useState('Produksi Cutting & Sewing');
   const [newEmail, setNewEmail] = useState('');
   const [newAllowedTabs, setNewAllowedTabs] = useState<string[]>([
     'pe-workflow',
     'ppic-planning',
+    'subcon',
     'transactions'
   ]);
 
@@ -107,13 +110,17 @@ export const UserAccessManagerView: React.FC = () => {
   const logoUploadRef = useRef<HTMLInputElement>(null);
 
   // Sync state when targetUser changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (targetUser) {
       setEditingName(targetUser.name);
+      setEditingUsername(targetUser.username);
+      setEditingDepartment(targetUser.department);
       setSelectedTabs(targetUser.allowedTabs || []);
       setNewPassword('');
+      setShowPassword(false);
+      setConfirmDeleteUserId(null);
     }
-  }, [selectedUserId, targetUser]);
+  }, [selectedUserId, targetUser?.id]);
 
   // Handle role change in new user creation
   const handleRoleChange = (role: UserRole) => {
@@ -125,63 +132,56 @@ export const UserAccessManagerView: React.FC = () => {
         break;
       case 'WAREHOUSE':
         setNewDepartment('Gudang Bahan Baku & Aksesoris');
-        setNewAllowedTabs(['warehouse-stock', 'transactions', 'spreadsheet', 'pe-workflow', 'user-access']);
+        setNewAllowedTabs(['warehouse-stock', 'transactions', 'spreadsheet']);
         break;
       case 'FACTORY_MANAGER':
         setNewDepartment('Executive Factory Management');
-        setNewAllowedTabs(['analytics', 'pe-workflow', 'warehouse-stock', 'ppic-planning', 'subcon', 'transactions', 'spreadsheet', 'user-access']);
+        setNewAllowedTabs(['new-style', 'pe-workflow', 'ppic-planning', 'warehouse-stock', 'subcon', 'transactions', 'spreadsheet', 'analytics']);
         break;
       case 'PPIC':
         setNewDepartment('PPIC & Inventory Control');
-        setNewAllowedTabs(['ppic-planning', 'warehouse-stock', 'transactions', 'pe-workflow', 'spreadsheet', 'user-access']);
+        setNewAllowedTabs(['new-style', 'ppic-planning', 'warehouse-stock', 'transactions', 'spreadsheet', 'analytics']);
         break;
       case 'PRODUCTION':
         setNewDepartment('Produksi Cutting & Sewing Line');
-        setNewAllowedTabs(['pe-workflow', 'ppic-planning', 'transactions', 'subcon', 'user-access']);
+        setNewAllowedTabs(['pe-workflow', 'ppic-planning', 'subcon', 'transactions', 'spreadsheet']);
         break;
       case 'SUBCON':
         setNewDepartment('Mitra Subkon Eksternal');
-        setNewAllowedTabs(['subcon', 'transactions', 'user-access']);
+        setNewAllowedTabs(['subcon', 'transactions']);
         break;
     }
   };
 
-  // 1. Save User Name
+  // 1. Save User Name, Username & Department
   const handleSaveName = () => {
-    if (!editingName.trim()) {
-      setErrorMessage('Nama pengguna tidak boleh kosong!');
-      return;
-    }
-    updateUserName(targetUser.id, editingName.trim());
-    setStatusMessage(`Nama akun berhasil diperbarui menjadi "${editingName.trim()}"!`);
-    setErrorMessage('');
-    setTimeout(() => setStatusMessage(''), 3500);
-  };
-
-  // 2. Change / Reset Password (PE Only)
-  const handleSavePassword = (customPass?: string) => {
-    const passwordToSave = customPass !== undefined ? customPass : newPassword;
-    
-    if (!passwordToSave.trim()) {
-      setErrorMessage('Password baru tidak boleh kosong!');
-      return;
-    }
-
-    const res = updateUserPassword(targetUser.id, passwordToSave);
+    const res = updateUserName(targetUser.id, editingName, editingUsername, editingDepartment);
     if (res.success) {
       setStatusMessage(res.message);
       setErrorMessage('');
-      setNewPassword('');
-      setTimeout(() => setStatusMessage(''), 4000);
+      setTimeout(() => setStatusMessage(''), 3500);
     } else {
       setErrorMessage(res.message);
     }
   };
 
-  // Quick reset password to default (<username>123)
-  const handleQuickResetPassword = () => {
-    const defaultPass = `${targetUser.username}123`;
-    handleSavePassword(defaultPass);
+  // 2. Change / Reset Password (PE Only)
+  const handleSavePassword = () => {
+    if (!newPassword.trim()) {
+      setErrorMessage('Masukkan password baru terlebih dahulu!');
+      return;
+    }
+
+    const res = updateUserPassword(targetUser.id, newPassword);
+    if (res.success) {
+      setStatusMessage(res.message);
+      setErrorMessage('');
+      setNewPassword('');
+      setShowPassword(false);
+      setTimeout(() => setStatusMessage(''), 4000);
+    } else {
+      setErrorMessage(res.message);
+    }
   };
 
   // 3. Save Tab Permissions
@@ -190,10 +190,45 @@ export const UserAccessManagerView: React.FC = () => {
       setErrorMessage('Pengguna minimal harus memiliki akses ke 1 bar menu!');
       return;
     }
-    updateUserPermissions(targetUser.id, selectedTabs);
-    setStatusMessage(`Hak akses menu untuk "${targetUser.name}" berhasil disimpan!`);
+    const res = updateUserPermissions(targetUser.id, selectedTabs);
+    if (res.success) {
+      setStatusMessage(res.message);
+      setErrorMessage('');
+      setTimeout(() => setStatusMessage(''), 3500);
+    } else {
+      setErrorMessage(res.message);
+    }
+  };
+
+  // Save All Changes for Selected User at once
+  const handleSaveAllTargetChanges = () => {
+    if (selectedTabs.length === 0) {
+      setErrorMessage('Pengguna minimal harus memiliki akses ke 1 bar menu!');
+      return;
+    }
+    const nameRes = updateUserName(targetUser.id, editingName, editingUsername, editingDepartment);
+    if (!nameRes.success) {
+      setErrorMessage(nameRes.message);
+      return;
+    }
+    const permRes = updateUserPermissions(targetUser.id, selectedTabs);
+    if (!permRes.success) {
+      setErrorMessage(permRes.message);
+      return;
+    }
+    if (newPassword.trim()) {
+      const passRes = updateUserPassword(targetUser.id, newPassword);
+      if (!passRes.success) {
+        setErrorMessage(passRes.message);
+        return;
+      }
+      setNewPassword('');
+      setShowPassword(false);
+    }
+
     setErrorMessage('');
-    setTimeout(() => setStatusMessage(''), 3500);
+    setStatusMessage(`Perubahan nama, user login, dan akses bar untuk "${editingName.trim()}" berhasil disimpan!`);
+    setTimeout(() => setStatusMessage(''), 4000);
   };
 
   const handleToggleTab = (tabId: string) => {
@@ -204,14 +239,21 @@ export const UserAccessManagerView: React.FC = () => {
     }
   };
 
-  // 4. Delete User
-  const handleDeleteUser = (userId: string, userName: string) => {
-    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus akun "${userName}"?`);
-    if (!confirmDelete) return;
+  const handleToggleNewUserTab = (tabId: string) => {
+    if (newAllowedTabs.includes(tabId)) {
+      setNewAllowedTabs(prev => prev.filter(t => t !== tabId));
+    } else {
+      setNewAllowedTabs(prev => [...prev, tabId]);
+    }
+  };
 
+  // 4. Delete User (Inline confirmation without window.confirm)
+  const handleExecuteDeleteUser = (userId: string) => {
     const res = deleteUser(userId);
     if (res.success) {
       setStatusMessage(res.message);
+      setErrorMessage('');
+      setConfirmDeleteUserId(null);
       const remaining = users.filter(u => u.id !== userId);
       if (remaining.length > 0) {
         setSelectedUserId(remaining[0].id);
@@ -219,6 +261,7 @@ export const UserAccessManagerView: React.FC = () => {
       setTimeout(() => setStatusMessage(''), 3500);
     } else {
       setErrorMessage(res.message);
+      setConfirmDeleteUserId(null);
       setTimeout(() => setErrorMessage(''), 3500);
     }
   };
@@ -234,19 +277,29 @@ export const UserAccessManagerView: React.FC = () => {
       return;
     }
 
-    const cleanUsername = newUsername.trim().toLowerCase().replace(/\s+/g, '_');
+    const cleanUsername = newUsername.trim().replace(/\s+/g, '_');
     if (!cleanUsername) {
-      setErrorMessage('Username login wajib diisi!');
+      setErrorMessage('User login wajib diisi!');
+      return;
+    }
+
+    if (!newInitialPassword.trim()) {
+      setErrorMessage('Password login untuk akun baru wajib diisi!');
+      return;
+    }
+
+    if (newAllowedTabs.length === 0) {
+      setErrorMessage('Pilih minimal 1 akses bar untuk akun baru ini!');
       return;
     }
 
     const res = addNewUser({
       name: newName.trim(),
       username: cleanUsername,
-      password: newInitialPassword.trim() || `${cleanUsername}123`,
+      password: newInitialPassword.trim(),
       role: newRole,
       department: newDepartment.trim(),
-      email: newEmail.trim() || `${cleanUsername}@terataiwidjaja.co.id`,
+      email: newEmail.trim() || `${cleanUsername.toLowerCase()}@terataiwidjaja.co.id`,
       allowedTabs: newAllowedTabs
     });
 
@@ -256,14 +309,8 @@ export const UserAccessManagerView: React.FC = () => {
       setNewUsername('');
       setNewInitialPassword('');
       setNewEmail('');
-
-      setTimeout(() => {
-        setPeSubTab('manage');
-        const justAdded = users.find(u => u.username.toLowerCase() === cleanUsername);
-        if (justAdded) {
-          setSelectedUserId(justAdded.id);
-        }
-      }, 700);
+      setShowNewPassword(false);
+      setPeSubTab('manage');
     } else {
       setErrorMessage(res.message);
     }
@@ -315,35 +362,35 @@ export const UserAccessManagerView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-5 font-sans">
       
       {/* Top Banner Header */}
-      <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800">
-        <div className="flex items-start gap-4">
-          <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 shrink-0 text-blue-400">
-            <ShieldCheck className="w-8 h-8" />
+      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2.5 rounded-xl bg-red-600 text-white shrink-0 shadow-xs">
+            <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-black tracking-tight">Pusat Akses, Akun &amp; Integrasi</h1>
-              <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-blue-900/60 text-blue-300 border border-blue-700">
-                Sistem Terpusat
+              <h1 className="text-lg sm:text-xl font-black tracking-tight">Manajemen Akses Akun &amp; Bar Menu (Khusus PE)</h1>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">
+                Otoritas PE
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Kelola akun aktif, sinkronisasi Google Spreadsheet, kustomisasi logo dashboard, dan pengaturan hak akses karyawan pabrik.
+            <p className="text-xs text-slate-300 mt-0.5 max-w-2xl">
+              Tambah atau hapus akun pengguna, ganti nama &amp; user login, serta atur akses bar menu yang tersedia untuk setiap akun.
             </p>
           </div>
         </div>
 
-        {/* Quick Actions: Print Matrix */}
-        <div className="flex items-center gap-2">
+        {/* Quick Actions */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => openPrintModal('user-access')}
             className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-2 border border-slate-700 transition-all cursor-pointer"
           >
             <Printer className="w-4 h-4 text-blue-400" />
-            <span>Cetak PDF Matriks Akses</span>
+            <span>Cetak Matriks Akses</span>
           </button>
         </div>
       </div>
@@ -351,27 +398,39 @@ export const UserAccessManagerView: React.FC = () => {
       {/* SUB-NAVIGATION TABS */}
       <div className="flex border-b border-slate-200 gap-2 overflow-x-auto scrollbar-none bg-white p-1.5 rounded-xl border">
         <button
+          onClick={() => setMainSubTab('pe-permissions')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            mainSubTab === 'pe-permissions'
+              ? 'bg-red-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <KeyRound className="w-4 h-4" />
+          <span>1. Kelola Akun &amp; Akses Bar (PE)</span>
+        </button>
+
+        <button
           onClick={() => setMainSubTab('profile')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             mainSubTab === 'profile'
               ? 'bg-blue-700 text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           <UserCheck className="w-4 h-4" />
-          <span>1. Profil &amp; Ganti Akun</span>
+          <span>2. Profil Aktif &amp; Ganti Akun</span>
         </button>
 
         <button
           onClick={() => setMainSubTab('spreadsheet')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             mainSubTab === 'spreadsheet'
               ? 'bg-blue-700 text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" />
-          <span>2. Google Spreadsheet</span>
+          <span>3. Google Spreadsheet</span>
           {lastSyncedGas && (
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
           )}
@@ -379,29 +438,14 @@ export const UserAccessManagerView: React.FC = () => {
 
         <button
           onClick={() => setMainSubTab('logo')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             mainSubTab === 'logo'
               ? 'bg-blue-700 text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           <ImageIcon className="w-4 h-4" />
-          <span>3. Kustomisasi Logo</span>
-        </button>
-
-        <button
-          onClick={() => setMainSubTab('pe-permissions')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            mainSubTab === 'pe-permissions'
-              ? 'bg-red-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <KeyRound className="w-4 h-4" />
-          <span>4. Hak Akses Karyawan</span>
-          {isPE && (
-            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">PE Admin</span>
-          )}
+          <span>4. Kustomisasi Logo</span>
         </button>
       </div>
 
@@ -419,11 +463,506 @@ export const UserAccessManagerView: React.FC = () => {
         </div>
       )}
 
-      {/* ----------------- TAB 1: PROFIL & GANTI AKUN ----------------- */}
+      {/* ----------------- TAB 1: KELOLA AKUN & AKSES BAR (KHUSUS PE) ----------------- */}
+      {mainSubTab === 'pe-permissions' && (
+        <div className="space-y-5">
+          {!isPE ? (
+            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center max-w-xl mx-auto space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center mx-auto">
+                <Lock className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">
+                  Akses Dibatasi: Hanya untuk Production Engineer (PE)
+                </h3>
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                  Hanya akun <strong>PE</strong> yang dapat menambahkan/menghapus akun serta mengganti nama dan akses bar yang tersedia.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              
+              {/* Left Sidebar (4 cols): User List + Add Button */}
+              <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-xs p-4 space-y-3 h-fit">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                      Daftar Akun ({users.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500">Klik akun untuk ubah nama / akses bar</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPeSubTab('create')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs ${
+                      peSubTab === 'create'
+                        ? 'bg-red-700 text-white'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>+ Tambah Akun</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                  {users.map(u => {
+                    const isSelected = peSubTab === 'manage' && u.id === targetUser?.id;
+                    const canDelete = u.id !== 'usr-pe' && u.id !== currentUser.id;
+                    const isConfirmingDelete = confirmDeleteUserId === u.id;
+
+                    return (
+                      <div
+                        key={u.id}
+                        onClick={() => {
+                          setPeSubTab('manage');
+                          setSelectedUserId(u.id);
+                        }}
+                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-blue-50/80 border-blue-600 ring-1 ring-blue-500/30 shadow-2xs'
+                            : 'bg-white border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-black text-slate-900 truncate flex items-center gap-1.5">
+                              <span>{u.name}</span>
+                              {u.role === 'PE' && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-600 text-white font-bold">
+                                  PE
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                              User: <strong className="text-blue-700">{u.username}</strong> • {u.role}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                              {u.allowedTabs.length} Bar
+                            </span>
+                            {canDelete && (
+                              isConfirmingDelete ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleExecuteDeleteUser(u.id)}
+                                  className="px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold cursor-pointer"
+                                >
+                                  Hapus!
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteUserId(u.id)}
+                                  className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                  title="Hapus akun ini"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right Panel (8 cols): Edit Selected Account OR Create New Account */}
+              <div className="lg:col-span-8">
+                {peSubTab === 'manage' && targetUser ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-6">
+                    
+                    {/* Selected Account Header & Delete Action */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base font-black text-slate-900">
+                            Pengaturan Akun: {targetUser.name}
+                          </h2>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            {targetUser.role}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          User Login: <strong className="font-mono text-slate-800">{targetUser.username}</strong> • Departemen: {targetUser.department}
+                        </p>
+                      </div>
+
+                      {targetUser.id !== 'usr-pe' && targetUser.id !== currentUser.id && (
+                        <div>
+                          {confirmDeleteUserId === targetUser.id ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleExecuteDeleteUser(targetUser.id)}
+                                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer"
+                              >
+                                Ya, Hapus Permanen
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteUserId(null)}
+                                className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteUserId(targetUser.id)}
+                              className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Hapus Akun</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 1. Ganti Nama, User Login & Departemen */}
+                    <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                          <Edit2 className="w-3.5 h-3.5 text-blue-700" />
+                          <span>1. Ganti Nama Pengguna &amp; User Login</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleSaveName}
+                          className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg cursor-pointer shadow-2xs transition-colors"
+                        >
+                          Simpan Nama &amp; User
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                            Nama Lengkap Pengguna
+                          </label>
+                          <input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            placeholder="Nama lengkap..."
+                            className="w-full px-3 py-2 text-xs font-semibold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                            User Login (Saat Masuk)
+                          </label>
+                          <input
+                            type="text"
+                            value={editingUsername}
+                            onChange={(e) => setEditingUsername(e.target.value)}
+                            placeholder="Username login..."
+                            className="w-full px-3 py-2 text-xs font-mono font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                            Departemen / Bagian
+                          </label>
+                          <input
+                            type="text"
+                            value={editingDepartment}
+                            onChange={(e) => setEditingDepartment(e.target.value)}
+                            placeholder="Departemen..."
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Atur Akses Bar yang Tersedia */}
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <label className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                            <span>2. Atur Akses Bar yang Tersedia untuk Akun Ini</span>
+                          </label>
+                          <p className="text-[11px] text-slate-500">
+                            Centang bar menu yang diizinkan tampil saat <strong>{targetUser.name}</strong> login
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTabs(ALL_NAV_TABS.map(t => t.id))}
+                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer"
+                          >
+                            Pilih Semua
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSavePermissions}
+                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            <span>Simpan Akses Bar</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {ALL_NAV_TABS.map((tab) => {
+                          const isChecked = selectedTabs.includes(tab.id);
+                          return (
+                            <label
+                              key={tab.id}
+                              className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                                isChecked
+                                  ? 'bg-blue-50/70 border-blue-400 text-blue-950'
+                                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleTab(tab.id)}
+                                className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                              />
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold flex items-center gap-1.5">
+                                  <span>{tab.label}</span>
+                                  {tab.id === 'user-access' && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-100 text-red-700 font-bold">
+                                      Khusus PE
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
+                                  {tab.description}
+                                </p>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 3. Ganti Password (Masked, never showing all passwords) */}
+                    <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <label className="block text-xs font-black text-slate-900">
+                        3. Ganti Password Akun (Opsional)
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Untuk keamanan, password saat ini disembunyikan (••••••). Ketik password baru di bawah jika ingin mengganti.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                        <div className="relative flex-1">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Ketik password baru untuk mengganti..."
+                            className="w-full px-3 py-2 pr-9 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSavePassword}
+                          className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer transition-colors shrink-0"
+                        >
+                          Update Password
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bottom Master Save Button */}
+                    <div className="pt-3 border-t border-slate-200 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSaveAllTargetChanges}
+                        className="px-5 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-black flex items-center gap-2 shadow-sm cursor-pointer transition-all"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Simpan Semua Perubahan Akun</span>
+                      </button>
+                    </div>
+
+                  </div>
+                ) : (
+                  /* Create New User Form */
+                  <form onSubmit={handleCreateNewUser} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-5">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">
+                          Tambah Akun Pengguna Baru (Oleh PE)
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Akun yang dibuat langsung terintegrasi dengan layar masuk (User &amp; Password) serta data operasional
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPeSubTab('manage')}
+                        className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+                      >
+                        &larr; Kembali ke Daftar
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Nama Lengkap Pengguna / PIC *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          placeholder="Contoh: Hendra Wijaya / CV Sinar Bordir"
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          User Login (Saat Masuk) *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newUsername}
+                          onChange={(e) => setNewUsername(e.target.value)}
+                          placeholder="Contoh: hendra_ppic / subcon_sinar"
+                          className="w-full px-3 py-2 text-xs font-mono font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Password Login *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? 'text' : 'password'}
+                            required
+                            value={newInitialPassword}
+                            onChange={(e) => setNewInitialPassword(e.target.value)}
+                            placeholder="Masukkan password akun..."
+                            className="w-full px-3 py-2 pr-9 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Peran / Departemen *
+                        </label>
+                        <select
+                          value={newRole}
+                          onChange={(e) => handleRoleChange(e.target.value as UserRole)}
+                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
+                        >
+                          <option value="PRODUCTION">Produksi Sewing &amp; Cutting</option>
+                          <option value="PPIC">PPIC &amp; Perencanaan BOM</option>
+                          <option value="WAREHOUSE">Gudang Material &amp; Stok</option>
+                          <option value="SUBCON">Mitra Subkon (Input Harian Target)</option>
+                          <option value="FACTORY_MANAGER">Factory Manager</option>
+                          <option value="PE">Production Engineer (PE)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Pilih Akses Bar yang Tersedia untuk Akun Baru */}
+                    <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-slate-900">
+                          Pilih Akses Bar yang Tersedia untuk Akun Baru Ini:
+                        </label>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setNewAllowedTabs(ALL_NAV_TABS.map(t => t.id))}
+                            className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold cursor-pointer"
+                          >
+                            Pilih Semua
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {ALL_NAV_TABS.map((tab) => {
+                          const isChecked = newAllowedTabs.includes(tab.id);
+                          return (
+                            <label
+                              key={tab.id}
+                              className={`p-2.5 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
+                                isChecked
+                                  ? 'bg-blue-50/70 border-blue-400 text-blue-950 font-bold'
+                                  : 'bg-white border-slate-200 text-slate-600'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleNewUserTab(tab.id)}
+                                className="w-4 h-4 text-blue-600 rounded border-slate-300 cursor-pointer"
+                              />
+                              <span className="text-xs">{tab.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPeSubTab('manage')}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Simpan &amp; Aktifkan Akun</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ----------------- TAB 2: PROFIL & GANTI AKUN ----------------- */}
       {mainSubTab === 'profile' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* User Card */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center gap-4">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg text-white shadow-sm ${
@@ -433,7 +972,7 @@ export const UserAccessManagerView: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-black text-slate-900 text-base">{currentUser.name}</h3>
-                <p className="text-xs text-slate-500 font-mono">@{currentUser.username}</p>
+                <p className="text-xs text-slate-500 font-mono">User: {currentUser.username}</p>
                 <div className="mt-1">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
                     currentUser.role === 'PE' 
@@ -452,10 +991,6 @@ export const UserAccessManagerView: React.FC = () => {
                 <span className="font-bold text-slate-900">{currentUser.department}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Email:</span>
-                <span className="font-mono text-slate-800">{currentUser.email || '-'}</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
                 <span>Status Akun:</span>
                 <span className="font-bold text-emerald-600 flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" /> Aktif
@@ -469,7 +1004,7 @@ export const UserAccessManagerView: React.FC = () => {
                 className="w-full py-2.5 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs"
               >
                 <UserCheck className="w-4 h-4" />
-                <span>Ganti Akun / Switch User</span>
+                <span>Ganti Akun (User &amp; Password)</span>
               </button>
 
               <button
@@ -482,7 +1017,6 @@ export const UserAccessManagerView: React.FC = () => {
             </div>
           </div>
 
-          {/* User Authorized Bars */}
           <div className="md:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
             <div>
               <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
@@ -490,15 +1024,13 @@ export const UserAccessManagerView: React.FC = () => {
                 Bar Menu yang Diizinkan untuk Akun Ini
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                {currentUser.role === 'PE' 
-                  ? 'Sebagai Production Engineer (PE), Anda memiliki wewenang administrator ke seluruh modul.' 
-                  : 'Daftar menu yang diberikan izin operasional oleh Lead Production Engineer (PE).'}
+                Daftar akses bar yang dikonfigurasi oleh Production Engineer (PE).
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
               {ALL_NAV_TABS.map((tab) => {
-                const isAllowed = currentUser.role === 'PE' || currentUser.allowedTabs.includes(tab.id) || tab.id === 'user-access';
+                const isAllowed = currentUser.role === 'PE' || currentUser.allowedTabs.includes(tab.id);
                 return (
                   <div
                     key={tab.id}
@@ -523,11 +1055,10 @@ export const UserAccessManagerView: React.FC = () => {
               })}
             </div>
           </div>
-
         </div>
       )}
 
-      {/* ----------------- TAB 2: GOOGLE SPREADSHEET INTEGRATION ----------------- */}
+      {/* ----------------- TAB 3: GOOGLE SPREADSHEET INTEGRATION ----------------- */}
       {mainSubTab === 'spreadsheet' && (
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -552,7 +1083,6 @@ export const UserAccessManagerView: React.FC = () => {
             </div>
           </div>
 
-          {/* Webhook Configuration Field */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <label className="block text-xs font-bold text-slate-800">
               URL Google Apps Script Web App (Webhook Endpoint):
@@ -581,7 +1111,6 @@ export const UserAccessManagerView: React.FC = () => {
               </button>
             </div>
 
-            {/* Sync Feedback Message */}
             {syncStatus.message && (
               <div className={`p-3 rounded-lg text-xs font-medium flex items-center gap-2 ${
                 syncStatus.type === 'success' 
@@ -600,29 +1129,10 @@ export const UserAccessManagerView: React.FC = () => {
               </div>
             )}
           </div>
-
-          {/* Sync Information Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Lembar 1: Alur SOP</span>
-              <div className="text-xs font-bold text-slate-800">14 Tahap SOP PE &amp; Status</div>
-              <p className="text-[11px] text-slate-500">Target tanggal, tanggal aktual, rute, dan catatan teknis.</p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Lembar 2: PPIC &amp; BOM</span>
-              <div className="text-xs font-bold text-slate-800">BOM Bahan &amp; Alokasi Panel</div>
-              <p className="text-[11px] text-slate-500">Kebutuhan yard/pcs, kancing, zipper, status kesiapan.</p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Lembar 3: Stok Gudang</span>
-              <div className="text-xs font-bold text-slate-800">Katalog Material &amp; Mutasi</div>
-              <p className="text-[11px] text-slate-500">Stok fisik aktual, lokasi rak, batas minimum order.</p>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* ----------------- TAB 3: KUSTOMISASI LOGO PERUSAHAAN ----------------- */}
+      {/* ----------------- TAB 4: KUSTOMISASI LOGO PERUSAHAAN ----------------- */}
       {mainSubTab === 'logo' && (
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -632,7 +1142,7 @@ export const UserAccessManagerView: React.FC = () => {
                 Kustomisasi Logo Perusahaan
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Logo ini akan tampil di sudut kiri atas dashboard dan disematkan pada seluruh dokumen cetak PDF
+                Logo ini akan tampil di layar login, sudut kiri atas dashboard, dan dokumen cetak PDF
               </p>
             </div>
 
@@ -646,11 +1156,9 @@ export const UserAccessManagerView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Logo Preview: Normal Color (Dashboard Header) */}
             <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                1. Tampilan Logo di Header Dashboard (Berwarna)
+                1. Tampilan Logo di Login &amp; Header Dashboard
               </span>
               <div className="h-28 bg-white rounded-xl border border-slate-200 flex items-center justify-center p-4">
                 {companyLogo ? (
@@ -673,7 +1181,6 @@ export const UserAccessManagerView: React.FC = () => {
               </div>
             </div>
 
-            {/* Logo Preview: Monochrome (Black & White for PDF Print) */}
             <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3">
               <span className="text-xs font-bold text-black uppercase tracking-wider block">
                 2. Tampilan Logo di Dokumen Cetak PDF (Hitam &amp; Putih)
@@ -692,10 +1199,8 @@ export const UserAccessManagerView: React.FC = () => {
                 )}
               </div>
             </div>
-
           </div>
 
-          {/* Action Buttons: Upload & Reset */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               onClick={() => logoUploadRef.current?.click()}
@@ -718,306 +1223,7 @@ export const UserAccessManagerView: React.FC = () => {
                 <span>Reset ke Logo Standar (TW)</span>
               </button>
             )}
-
-            <span className="text-[11px] text-slate-400">
-              Format didukung: PNG (disarankan transparan), JPG, SVG. Maks 2MB.
-            </span>
           </div>
-        </div>
-      )}
-
-      {/* ----------------- TAB 4: HAK AKSES KARYAWAN (KHUSUS PE) ----------------- */}
-      {mainSubTab === 'pe-permissions' && (
-        <div className="space-y-6">
-          
-          {/* If user is not PE, display informative restricted notice */}
-          {!isPE ? (
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center max-w-xl mx-auto space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto">
-                <Lock className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Otoritas Hak Akses Karyawan Dikelola Oleh Production Engineer (PE)
-                </h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                  Akun Anda saat ini (<strong>{currentUser.name}</strong> - <em>{currentUser.role}</em>) dapat mengakses profil dan spreadsheet. Pengubahan hak akses menu bar atau perubahan password akun lain hanya dapat dilakukan oleh otoritas <strong>Production Engineer (PE)</strong>.
-                </p>
-              </div>
-              <div className="pt-2 text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border">
-                Kontak Otoritas PE: <strong>Hendra Gunawan, S.T.</strong> (Ext. 104 / pe.terataiwidjaja@gmail.com)
-              </div>
-            </div>
-          ) : (
-            
-            /* PE FULL MANAGEMENT INTERFACE */
-            <div className="space-y-6">
-              
-              {/* PE Sub-Tab Switcher */}
-              <div className="flex border-b border-slate-200 gap-2">
-                <button
-                  onClick={() => setPeSubTab('manage')}
-                  className={`pb-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
-                    peSubTab === 'manage'
-                      ? 'border-red-600 text-red-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Kelola Akun Karyawan Terdaftar ({users.length})</span>
-                </button>
-                <button
-                  onClick={() => setPeSubTab('create')}
-                  className={`pb-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
-                    peSubTab === 'create'
-                      ? 'border-red-600 text-red-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>+ Tambah Akun PIC Baru</span>
-                </button>
-              </div>
-
-              {peSubTab === 'manage' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* User List Sidebar */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Pilih Akun yang Dikelola
-                    </h3>
-                    <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1">
-                      {users.map(u => {
-                        const isSelected = u.id === targetUser?.id;
-                        return (
-                          <div
-                            key={u.id}
-                            onClick={() => setSelectedUserId(u.id)}
-                            className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${
-                              isSelected
-                                ? 'bg-red-50 border-red-300 text-red-950 font-bold shadow-xs'
-                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                            }`}
-                          >
-                            <div className="space-y-0.5">
-                              <div className="font-bold">{u.name}</div>
-                              <div className="text-[11px] text-slate-500 font-mono">@{u.username} • {u.role}</div>
-                            </div>
-                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
-                              u.role === 'PE' ? 'bg-red-200 text-red-800' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {u.allowedTabs.length} Bar
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Settings for Selected User */}
-                  <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-                    
-                    {/* Header info */}
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                      <div>
-                        <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                          Pengaturan Akun: {targetUser.name}
-                        </h2>
-                        <p className="text-xs text-slate-500">Peran: {targetUser.role} • Dept: {targetUser.department}</p>
-                      </div>
-
-                      {targetUser.id !== currentUser.id && (
-                        <button
-                          onClick={() => handleDeleteUser(targetUser.id, targetUser.name)}
-                          className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Hapus Akun</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* 1. Edit Name */}
-                    <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-800">Nama Lengkap PIC:</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600"
-                        />
-                        <button
-                          onClick={handleSaveName}
-                          className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-colors shrink-0"
-                        >
-                          Simpan Nama
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 2. Change Password */}
-                    <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                      <label className="block text-xs font-bold text-slate-800">Ganti / Reset Password Akun:</label>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Ketik password baru..."
-                            className="w-full px-3 py-2 pr-9 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
-                          >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => handleSavePassword()}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-colors shrink-0"
-                        >
-                          Update Password
-                        </button>
-                        <button
-                          onClick={handleQuickResetPassword}
-                          className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition-colors shrink-0"
-                          title="Reset ke username123"
-                        >
-                          Reset Default
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 3. Tab Permissions */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-xs font-bold text-slate-800">
-                          Otoritas Bar Menu yang Diizinkan:
-                        </label>
-                        <button
-                          onClick={handleSavePermissions}
-                          className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-colors flex items-center gap-1.5"
-                        >
-                          <Save className="w-3.5 h-3.5" />
-                          <span>Simpan Hak Akses</span>
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {ALL_NAV_TABS.map((tab) => {
-                          const isChecked = selectedTabs.includes(tab.id);
-                          return (
-                            <label
-                              key={tab.id}
-                              className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
-                                isChecked
-                                  ? 'bg-blue-50/70 border-blue-300 text-blue-950 font-bold'
-                                  : 'bg-white border-slate-200 text-slate-600'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => handleToggleTab(tab.id)}
-                                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                              />
-                              <span className="text-xs">{tab.label}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                  </div>
-
-                </div>
-              ) : (
-                
-                /* Create New User Form */
-                <form onSubmit={handleCreateNewUser} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-2xl mx-auto space-y-4">
-                  <h3 className="text-base font-black text-slate-900 border-b pb-3">
-                    Tambah Akun Pengguna / PIC Baru
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Nama Lengkap PIC:</label>
-                      <input
-                        type="text"
-                        required
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        placeholder="Contoh: Budi Santoso"
-                        className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Username Login:</label>
-                      <input
-                        type="text"
-                        required
-                        value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
-                        placeholder="Contoh: budi_ppic"
-                        className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Peran / Role:</label>
-                      <select
-                        value={newRole}
-                        onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-                        className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
-                      >
-                        <option value="PE">Production Engineer (PE)</option>
-                        <option value="PPIC">PPIC</option>
-                        <option value="WAREHOUSE">Warehouse / Gudang</option>
-                        <option value="PRODUCTION">Produksi Sewing &amp; Cutting</option>
-                        <option value="SUBCON">Mitra Subkon</option>
-                        <option value="FACTORY_MANAGER">Factory Manager</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Password Awal:</label>
-                      <input
-                        type="text"
-                        value={newInitialPassword}
-                        onChange={(e) => setNewInitialPassword(e.target.value)}
-                        placeholder="Kosongkan untuk default username123"
-                        className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPeSubTab('manage')}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs"
-                    >
-                      Buat Akun PIC
-                    </button>
-                  </div>
-                </form>
-              )}
-
-            </div>
-          )}
-
         </div>
       )}
 
