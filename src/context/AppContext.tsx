@@ -1503,7 +1503,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           role: 'SUBCON',
           department: `Mitra Subkon (${task.type})`,
           email: `${cleanUser}@mitrasubkon.id`,
-          allowedTabs: ['subcon', 'transactions']
+          allowedTabs: ['subcon']
         };
         setUsers(prev => [...prev, newSubconUser]);
         subconAccountId = newAccId;

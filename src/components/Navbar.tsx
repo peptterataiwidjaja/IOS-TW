@@ -64,7 +64,7 @@ export const Navbar: React.FC = () => {
       id: 'subcon', 
       label: currentUser.role === 'SUBCON' ? 'Portal Input Harian Subkon' : 'Mitra Subkon', 
       icon: Truck,
-      badge: subconWarnings.length > 0 ? `${subconWarnings.length} Warning H-3` : undefined,
+      badge: currentUser.role !== 'SUBCON' && subconWarnings.length > 0 ? `${subconWarnings.length} Warning H-3` : undefined,
       badgeColor: 'bg-red-600 text-white'
     },
     { id: 'transactions', label: 'Riwayat Mutasi', icon: FileText },
@@ -143,31 +143,35 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Center: Compact Active Style Selector + Quick Add Style Button */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-            <Layers2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-            <span className="text-[11px] text-slate-500 hidden md:inline font-medium">Style Aktif:</span>
-            <select
-              value={selectedStyleId}
-              onChange={(e) => setSelectedStyleId(e.target.value)}
-              className="bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer max-w-[170px] sm:max-w-[240px] truncate"
-            >
-              {styles.map(style => (
-                <option key={style.id} value={style.id}>
-                  {style.code} — {style.name} ({style.targetQuantityPcs.toLocaleString()} pcs)
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => setActiveTab('new-style')}
-              className="px-2 py-1 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
-              title="Tambah Model / Style Produksi Baru"
-            >
-              <PlusCircle className="w-3 h-3" />
-              <span className="hidden sm:inline">+ Model</span>
-            </button>
-          </div>
+          {/* Center: Compact Active Style Selector + Quick Add Style Button (Hidden for SUBCON) */}
+          {currentUser.role !== 'SUBCON' && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
+              <Layers2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+              <span className="text-[11px] text-slate-500 hidden md:inline font-medium">Style Aktif:</span>
+              <select
+                value={selectedStyleId}
+                onChange={(e) => setSelectedStyleId(e.target.value)}
+                className="bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer max-w-[170px] sm:max-w-[240px] truncate"
+              >
+                {styles.map(style => (
+                  <option key={style.id} value={style.id}>
+                    {style.code} — {style.name} ({style.targetQuantityPcs.toLocaleString()} pcs)
+                  </option>
+                ))}
+              </select>
+              {isTabAllowed('new-style') && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('new-style')}
+                  className="px-2 py-1 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                  title="Tambah Model / Style Produksi Baru"
+                >
+                  <PlusCircle className="w-3 h-3" />
+                  <span className="hidden sm:inline">+ Model</span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Right: User Account Switcher, Print PDF & Notifications */}
           <div className="flex items-center gap-2 justify-end">
@@ -192,103 +196,107 @@ export const Navbar: React.FC = () => {
               <span className="hidden md:inline">Keluar</span>
             </button>
 
-            <button
-              onClick={() => openPrintModal(activeTab)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
-              title="Cetak dokumen PDF"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-300" />
-              <span className="hidden sm:inline">Cetak PDF</span>
-            </button>
+            {currentUser.role !== 'SUBCON' && (
+              <>
+                <button
+                  onClick={() => openPrintModal(activeTab)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
+                  title="Cetak dokumen PDF"
+                >
+                  <Printer className="w-3.5 h-3.5 text-slate-300" />
+                  <span className="hidden sm:inline">Cetak PDF</span>
+                </button>
 
-            {/* Notification Bell */}
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
-                title="Notifikasi Warning Subkon H-3 & Stok Gudang"
-              >
-                <Bell className="w-4 h-4 text-slate-600" />
-                {(subconWarnings.length > 0 || lowStockItems.length > 0 || pendingCashFlowCount > 0) && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
-                    {subconWarnings.length + lowStockItems.length}
-                  </span>
-                )}
-              </button>
+                {/* Notification Bell (Only for Internal Accounts, NOT for SUBCON) */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
+                    title="Notifikasi Warning Subkon H-3 & Stok Gudang"
+                  >
+                    <Bell className="w-4 h-4 text-slate-600" />
+                    {(subconWarnings.length > 0 || lowStockItems.length > 0 || pendingCashFlowCount > 0) && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                        {subconWarnings.length + lowStockItems.length}
+                      </span>
+                    )}
+                  </button>
 
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-                  <div className="p-2.5 bg-slate-900 text-white flex items-center justify-between text-xs font-bold">
-                    <span>Peringatan Sistem &amp; Warning H-3</span>
-                    <span className="text-[11px] text-amber-300">
-                      {subconWarnings.length} Subkon • {lowStockItems.length} Stok
-                    </span>
-                  </div>
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                      <div className="p-2.5 bg-slate-900 text-white flex items-center justify-between text-xs font-bold">
+                        <span>Peringatan Sistem &amp; Warning H-3</span>
+                        <span className="text-[11px] text-amber-300">
+                          {subconWarnings.length} Subkon • {lowStockItems.length} Stok
+                        </span>
+                      </div>
 
-                  <div className="p-2.5 max-h-80 overflow-y-auto space-y-2 text-xs">
-                    {subconWarnings.length > 0 && (
-                      <div className="space-y-1.5">
-                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-red-700 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          <span>Warning Subkon (H-3 Sebelum Target)</span>
-                        </div>
-                        {subconWarnings.map(w => (
-                          <div
-                            key={w.taskId}
-                            onClick={() => { setActiveTab('subcon'); setShowNotifications(false); }}
-                            className="p-2.5 rounded-lg bg-amber-50 border border-amber-300 hover:bg-amber-100 cursor-pointer transition-colors"
-                          >
-                            <div className="font-black text-slate-900 flex items-center justify-between gap-2">
-                              <span className="truncate">{w.subconName} ({w.styleCode})</span>
-                              <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black shrink-0">
-                                {w.daysUntilDeadline < 0 ? `Telat ${Math.abs(w.daysUntilDeadline)} Hr` : `H-${w.daysUntilDeadline}`}
-                              </span>
+                      <div className="p-2.5 max-h-80 overflow-y-auto space-y-2 text-xs">
+                        {subconWarnings.length > 0 && (
+                          <div className="space-y-1.5">
+                            <div className="text-[10px] font-extrabold uppercase tracking-wider text-red-700 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              <span>Warning Subkon (H-3 Sebelum Target)</span>
                             </div>
-                            <div className="text-[11px] text-amber-900 mt-1 leading-snug">
-                              {w.reasons[0]}
-                            </div>
-                            <div className="text-[10px] text-slate-600 flex justify-between mt-1 font-semibold">
-                              <span>Aktual: {w.avgActualDailyPcs}/{w.dailyTargetPcs} pcs/hr</span>
-                              <span className="text-red-700">Sisa: {w.remainingQty} pcs</span>
-                            </div>
+                            {subconWarnings.map(w => (
+                              <div
+                                key={w.taskId}
+                                onClick={() => { setActiveTab('subcon'); setShowNotifications(false); }}
+                                className="p-2.5 rounded-lg bg-amber-50 border border-amber-300 hover:bg-amber-100 cursor-pointer transition-colors"
+                              >
+                                <div className="font-black text-slate-900 flex items-center justify-between gap-2">
+                                  <span className="truncate">{w.subconName} ({w.styleCode})</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black shrink-0">
+                                    {w.daysUntilDeadline < 0 ? `Telat ${Math.abs(w.daysUntilDeadline)} Hr` : `H-${w.daysUntilDeadline}`}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-amber-900 mt-1 leading-snug">
+                                  {w.reasons[0]}
+                                </div>
+                                <div className="text-[10px] text-slate-600 flex justify-between mt-1 font-semibold">
+                                  <span>Aktual: {w.avgActualDailyPcs}/{w.dailyTargetPcs} pcs/hr</span>
+                                  <span className="text-red-700">Sisa: {w.remainingQty} pcs</span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
-                    {lowStockItems.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                          Stok Gudang Menipis
-                        </div>
-                        {lowStockItems.map(item => (
-                          <div 
-                            key={item.id} 
-                            onClick={() => { setActiveTab('warehouse-stock'); setShowNotifications(false); }}
-                            className="p-2 rounded-lg bg-rose-50/70 border border-rose-200 hover:bg-rose-100 cursor-pointer transition-colors"
-                          >
-                            <div className="font-bold text-slate-900 flex justify-between">
-                              <span className="truncate">{item.name}</span>
-                              <span className="text-rose-600 font-bold shrink-0">{item.currentStock} {item.unit}</span>
+                        {lowStockItems.length > 0 && (
+                          <div className="space-y-1.5 pt-1">
+                            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                              Stok Gudang Menipis
                             </div>
-                            <div className="text-[11px] text-slate-500 flex justify-between mt-0.5">
-                              <span>Style: {item.styleCode}</span>
-                              <span>Min: {item.minStockLevel} {item.unit}</span>
-                            </div>
+                            {lowStockItems.map(item => (
+                              <div 
+                                key={item.id} 
+                                onClick={() => { setActiveTab('warehouse-stock'); setShowNotifications(false); }}
+                                className="p-2 rounded-lg bg-rose-50/70 border border-rose-200 hover:bg-rose-100 cursor-pointer transition-colors"
+                              >
+                                <div className="font-bold text-slate-900 flex justify-between">
+                                  <span className="truncate">{item.name}</span>
+                                  <span className="text-rose-600 font-bold shrink-0">{item.currentStock} {item.unit}</span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 flex justify-between mt-0.5">
+                                  <span>Style: {item.styleCode}</span>
+                                  <span>Min: {item.minStockLevel} {item.unit}</span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
-                    {subconWarnings.length === 0 && lowStockItems.length === 0 && (
-                      <div className="py-5 text-center text-slate-400">
-                        Semua jadwal subkon &amp; stok gudang dalam kondisi aman.
+                        {subconWarnings.length === 0 && lowStockItems.length === 0 && (
+                          <div className="py-5 text-center text-slate-400">
+                            Semua jadwal subkon &amp; stok gudang dalam kondisi aman.
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
         </div>

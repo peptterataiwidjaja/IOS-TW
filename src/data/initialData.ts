@@ -119,8 +119,7 @@ export const INITIAL_USERS: UserAccount[] = [
     department: 'Mitra Rekanan Subkon (Bordir)',
     email: 'subcon.prima@gmail.com',
     allowedTabs: [
-      'subcon',
-      'transactions'
+      'subcon'
     ]
   },
   {
@@ -132,8 +131,7 @@ export const INITIAL_USERS: UserAccount[] = [
     department: 'Mitra Rekanan Subkon (Sablon)',
     email: 'admin@multiscreen.co.id',
     allowedTabs: [
-      'subcon',
-      'transactions'
+      'subcon'
     ]
   }
 ];
