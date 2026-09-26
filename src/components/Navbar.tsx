@@ -9,14 +9,13 @@ import {
   Table2, 
   BarChart3, 
   Bell, 
-  ChevronDown, 
   AlertTriangle, 
   Layers2, 
   ShieldCheck,
   Printer,
-  Upload,
   Camera,
-  RotateCcw
+  PlusCircle,
+  UserCheck
 } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 
@@ -28,13 +27,15 @@ export const Navbar: React.FC = () => {
     setSelectedStyleId, 
     lowStockItems, 
     pendingCashFlowCount, 
+    subconWarnings,
     activeTab, 
     setActiveTab,
     isTabAllowed,
     setIsLoginModalOpen,
     companyLogo,
     setCompanyLogo,
-    openPrintModal
+    openPrintModal,
+    requisitionCart
   } = useApp();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -43,14 +44,31 @@ export const Navbar: React.FC = () => {
   const selectedStyle = styles.find(s => s.id === selectedStyleId) || styles[0];
 
   const allNavItems = [
-    { id: 'pe-workflow', label: '1. Alur SOP & PE', icon: ClipboardCheck, badge: '14 Tahap' },
-    { id: 'ppic-planning', label: '2. Perencanaan PPIC & BOM', icon: Layers, badge: 'BOM & Bahan' },
-    { id: 'warehouse-stock', label: '3. Stok Gudang', icon: Warehouse, badge: lowStockItems.length > 0 ? `${lowStockItems.length} Menipis` : undefined, badgeColor: 'bg-red-600 text-white' },
-    { id: 'subcon', label: '4. Mitra Subkon', icon: Truck },
-    { id: 'transactions', label: '5. Transaksi & PIC', icon: FileText },
-    { id: 'spreadsheet', label: '6. Google Spreadsheet', icon: Table2, badge: 'XLSX' },
-    { id: 'analytics', label: '7. Analitik & KPI', icon: BarChart3 },
-    { id: 'user-access', label: '8. Akses & Akun', icon: ShieldCheck, badge: 'Profil & Hak Akses', badgeColor: 'bg-blue-600 text-white' },
+    { id: 'new-style', label: 'Input Model Baru', icon: PlusCircle },
+    { id: 'pe-workflow', label: 'Alur SOP', icon: ClipboardCheck },
+    { id: 'ppic-planning', label: 'PPIC & BOM', icon: Layers },
+    { 
+      id: 'warehouse-stock', 
+      label: 'Stok Gudang', 
+      icon: Warehouse, 
+      badge: requisitionCart.length > 0 
+        ? `${requisitionCart.length} Keranjang` 
+        : lowStockItems.length > 0 
+        ? `${lowStockItems.length}` 
+        : undefined,
+      badgeColor: requisitionCart.length > 0 ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'
+    },
+    { 
+      id: 'subcon', 
+      label: currentUser.role === 'SUBCON' ? 'Portal Input Harian Subkon' : 'Mitra Subkon', 
+      icon: Truck,
+      badge: subconWarnings.length > 0 ? `${subconWarnings.length} Warning H-3` : undefined,
+      badgeColor: 'bg-red-600 text-white'
+    },
+    { id: 'transactions', label: 'Riwayat Mutasi', icon: FileText },
+    { id: 'spreadsheet', label: 'Spreadsheet', icon: Table2 },
+    { id: 'analytics', label: 'Analitik', icon: BarChart3 },
+    { id: 'user-access', label: 'Akses Akun', icon: ShieldCheck },
   ];
 
   // Filter navigation items strictly according to user permissions
@@ -61,7 +79,6 @@ export const Navbar: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Mohon pilih file gambar yang valid (PNG, JPG, SVG, WebP).');
         return;
       }
       const reader = new FileReader();
@@ -76,15 +93,13 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs font-sans">
-      {/* Top Bar: Clean, uncluttered header without "Input Model Baru", Spreadsheet or Akun buttons */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-        <div className="flex items-center justify-between gap-4">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-2xs font-sans">
+      {/* Compact Top Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           
-          {/* Left: Logo (with instant image upload feature) & Company Title */}
-          <div className="flex items-center gap-3 shrink-0">
-            
-            {/* Hidden file input for logo replacement */}
+          {/* Left: Logo & Company Title */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <input 
               type="file" 
               ref={fileInputRef}
@@ -93,80 +108,84 @@ export const Navbar: React.FC = () => {
               className="hidden"
             />
 
-            {/* Logo Container with upload trigger on click/hover */}
             <div 
               onClick={() => fileInputRef.current?.click()}
               className="relative group cursor-pointer"
-              title="Klik untuk mengganti logo perusahaan (Upload gambar)"
+              title="Klik untuk mengganti logo perusahaan"
             >
               {companyLogo ? (
-                <div className="h-10 px-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden hover:border-blue-500 transition-colors">
+                <div className="h-9 px-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden hover:border-blue-500 transition-colors">
                   <img 
                     src={companyLogo} 
                     alt="Logo Perusahaan" 
-                    className="h-8 max-w-[120px] object-contain"
+                    className="h-7 max-w-[100px] object-contain"
                   />
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center font-black text-lg shadow-sm border-2 border-red-500 hover:border-blue-400 transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-blue-700 text-white flex items-center justify-center font-black text-sm shadow-2xs border-2 border-red-500">
                   TW
                 </div>
               )}
-
-              {/* Hover overlay hint for image upload */}
-              <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-4 h-4 text-white" />
+              <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-3.5 h-3.5 text-white" />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-black tracking-tight text-slate-900 leading-tight">
-                  PT TERATAI WIDJAJA
-                </span>
-                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200">
-                  GARMENT
-                </span>
+              <div className="text-sm font-black tracking-tight text-slate-900 leading-tight">
+                PT TERATAI WIDJAJA
               </div>
               <p className="text-[11px] text-slate-500">
-                Sistem Terpadu Operasional Produksi &amp; PPIC
+                Sistem Operasional Produksi &amp; Gudang
               </p>
             </div>
           </div>
 
-          {/* Center: Style Selector dropdown */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
-              <Layers2 className="w-4 h-4 text-blue-700 shrink-0" />
-              <div className="text-xs text-slate-500 shrink-0 hidden md:block font-medium">Model / Style:</div>
-              <select
-                value={selectedStyleId}
-                onChange={(e) => setSelectedStyleId(e.target.value)}
-                className="bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer max-w-[180px] sm:max-w-xs truncate"
-              >
-                {styles.map(style => (
-                  <option key={style.id} value={style.id}>
-                    {style.code} — {style.name} ({style.targetQuantityPcs.toLocaleString()} pcs)
-                  </option>
-                ))}
-              </select>
-              <div className="hidden lg:flex items-center gap-1.5 ml-1 pl-2 border-l border-slate-200 text-[11px] text-slate-600">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Buyer: <strong className="text-slate-800">{selectedStyle?.buyer}</strong></span>
-              </div>
-            </div>
+          {/* Center: Compact Active Style Selector + Quick Add Style Button */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
+            <Layers2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+            <span className="text-[11px] text-slate-500 hidden md:inline font-medium">Style Aktif:</span>
+            <select
+              value={selectedStyleId}
+              onChange={(e) => setSelectedStyleId(e.target.value)}
+              className="bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer max-w-[170px] sm:max-w-[240px] truncate"
+            >
+              {styles.map(style => (
+                <option key={style.id} value={style.id}>
+                  {style.code} — {style.name} ({style.targetQuantityPcs.toLocaleString()} pcs)
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setActiveTab('new-style')}
+              className="px-2 py-1 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+              title="Tambah Model / Style Produksi Baru"
+            >
+              <PlusCircle className="w-3 h-3" />
+              <span className="hidden sm:inline">+ Model</span>
+            </button>
           </div>
 
-          {/* Right: Quick Print PDF Button & Notifications Bell */}
+          {/* Right: User Account Switcher, Print PDF & Notifications */}
           <div className="flex items-center gap-2 justify-end">
-            
-            {/* Direct Print to PDF Button for currently active bar */}
+            <button
+              type="button"
+              onClick={() => setIsLoginModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 transition-colors cursor-pointer"
+              title="Ganti Akun Pengguna"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-blue-700" />
+              <span className="font-bold text-slate-900 max-w-[110px] truncate hidden sm:inline">{currentUser.name}</span>
+              <span className="text-[11px] text-blue-700 font-semibold">({currentUser.role})</span>
+            </button>
+
             <button
               onClick={() => openPrintModal(activeTab)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
-              title="Cetak dokumen PDF data penting hitam-putih untuk bar yang sedang aktif"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
+              title="Cetak dokumen PDF"
             >
-              <Printer className="w-4 h-4 text-slate-300" />
+              <Printer className="w-3.5 h-3.5 text-slate-300" />
               <span className="hidden sm:inline">Cetak PDF</span>
             </button>
 
@@ -174,106 +193,127 @@ export const Navbar: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
-                title="Pusat Notifikasi Stok & Perencanaan"
+                className="relative p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
+                title="Notifikasi Warning Subkon H-3 & Stok Gudang"
               >
                 <Bell className="w-4 h-4 text-slate-600" />
-                {(lowStockItems.length > 0 || pendingCashFlowCount > 0) && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center animate-bounce">
-                    {lowStockItems.length + pendingCashFlowCount}
+                {(subconWarnings.length > 0 || lowStockItems.length > 0 || pendingCashFlowCount > 0) && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                    {subconWarnings.length + lowStockItems.length}
                   </span>
                 )}
               </button>
 
-              {/* Notification Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-                  <div className="p-3 bg-blue-700 text-white flex items-center justify-between text-xs font-bold">
-                    <span className="flex items-center gap-1.5">
-                      <Bell className="w-4 h-4 text-yellow-300" />
-                      Notifikasi Otomatis
-                    </span>
-                    <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">
-                      {lowStockItems.length} Perlu Perhatian
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                  <div className="p-2.5 bg-slate-900 text-white flex items-center justify-between text-xs font-bold">
+                    <span>Peringatan Sistem &amp; Warning H-3</span>
+                    <span className="text-[11px] text-amber-300">
+                      {subconWarnings.length} Subkon • {lowStockItems.length} Stok
                     </span>
                   </div>
 
-                  <div className="p-3 max-h-72 overflow-y-auto space-y-2 text-xs">
-                    {lowStockItems.length > 0 ? (
+                  <div className="p-2.5 max-h-80 overflow-y-auto space-y-2 text-xs">
+                    {subconWarnings.length > 0 && (
                       <div className="space-y-1.5">
-                        <div className="font-bold text-red-600 flex items-center gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          Stok Menipis / Defisit ({lowStockItems.length} Item):
+                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-red-700 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          <span>Warning Subkon (H-3 Sebelum Target)</span>
+                        </div>
+                        {subconWarnings.map(w => (
+                          <div
+                            key={w.taskId}
+                            onClick={() => { setActiveTab('subcon'); setShowNotifications(false); }}
+                            className="p-2.5 rounded-lg bg-amber-50 border border-amber-300 hover:bg-amber-100 cursor-pointer transition-colors"
+                          >
+                            <div className="font-black text-slate-900 flex items-center justify-between gap-2">
+                              <span className="truncate">{w.subconName} ({w.styleCode})</span>
+                              <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black shrink-0">
+                                {w.daysUntilDeadline < 0 ? `Telat ${Math.abs(w.daysUntilDeadline)} Hr` : `H-${w.daysUntilDeadline}`}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-amber-900 mt-1 leading-snug">
+                              {w.reasons[0]}
+                            </div>
+                            <div className="text-[10px] text-slate-600 flex justify-between mt-1 font-semibold">
+                              <span>Aktual: {w.avgActualDailyPcs}/{w.dailyTargetPcs} pcs/hr</span>
+                              <span className="text-red-700">Sisa: {w.remainingQty} pcs</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {lowStockItems.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                          Stok Gudang Menipis
                         </div>
                         {lowStockItems.map(item => (
                           <div 
                             key={item.id} 
                             onClick={() => { setActiveTab('warehouse-stock'); setShowNotifications(false); }}
-                            className="p-2 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors text-slate-700"
+                            className="p-2 rounded-lg bg-rose-50/70 border border-rose-200 hover:bg-rose-100 cursor-pointer transition-colors"
                           >
                             <div className="font-bold text-slate-900 flex justify-between">
-                              <span>{item.name}</span>
-                              <span className="text-red-600 font-bold">{item.currentStock} {item.unit}</span>
+                              <span className="truncate">{item.name}</span>
+                              <span className="text-rose-600 font-bold shrink-0">{item.currentStock} {item.unit}</span>
                             </div>
                             <div className="text-[11px] text-slate-500 flex justify-between mt-0.5">
                               <span>Style: {item.styleCode}</span>
-                              <span>Batas Min: {item.minStockLevel} {item.unit}</span>
+                              <span>Min: {item.minStockLevel} {item.unit}</span>
                             </div>
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <div className="py-6 text-center text-slate-400">
-                        Semua stok gudang dan alokasi komponen produksi dalam kondisi optimal.
+                    )}
+
+                    {subconWarnings.length === 0 && lowStockItems.length === 0 && (
+                      <div className="py-5 text-center text-slate-400">
+                        Semua jadwal subkon &amp; stok gudang dalam kondisi aman.
                       </div>
                     )}
                   </div>
                 </div>
               )}
             </div>
-
           </div>
 
         </div>
       </div>
 
-      {/* Bottom Bar: Clean Tab Navigation with Dedicated "Bar Akses" containing Akun & Spreadsheet */}
-      <div className="bg-slate-50/90 border-t border-slate-200 px-4 sm:px-6 lg:px-8 overflow-x-auto scrollbar-thin">
-        <div className="max-w-7xl mx-auto flex items-center justify-between py-1.5 gap-2">
-          
-          <div className="flex space-x-1.5 overflow-x-auto scrollbar-none py-0.5">
-            {visibleNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
+      {/* Bottom Bar: Clean, Compact Tab Navigation */}
+      <div className="bg-slate-50 border-t border-slate-200 px-4 sm:px-6 lg:px-8 overflow-x-auto scrollbar-none">
+        <div className="max-w-7xl mx-auto flex items-center space-x-1 py-1">
+          {visibleNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-blue-700 text-white shadow-sm border-t-2 border-red-500'
-                      : 'text-slate-600 hover:text-blue-700 hover:bg-white border border-transparent'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
-                      item.badgeColor || (isActive ? 'bg-blue-800 text-blue-100' : 'bg-slate-200 text-slate-700')
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                  isActive
+                    ? 'bg-blue-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-bold ${
+                    isActive ? 'bg-white/20 text-white' : item.badgeColor
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Login / Switch Account Modal */}
       <LoginModal
         isOpen={useApp().isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}

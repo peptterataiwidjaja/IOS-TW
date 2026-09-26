@@ -67,6 +67,43 @@ export interface StockTransaction {
   notes?: string;
 }
 
+export interface RequisitionCartItem {
+  id: string;
+  stockItemId: string;
+  itemCode: string;
+  itemName: string;
+  category: MaterialCategory;
+  styleCode: string;
+  styleName: string;
+  currentStock: number;
+  quantityToIssue: number;
+  unit: StockItem['unit'];
+  rackLocation: string;
+  unitPrice: number;
+  notes?: string;
+}
+
+export interface SubmittedRequisitionReceipt {
+  referenceDoc: string;
+  timestamp: string;
+  styleCode: string;
+  styleName: string;
+  destinationDept: StockTransaction['destinationDept'];
+  picReceiver: string;
+  picGudang: string;
+  verifiedByPE?: string;
+  reason: string;
+  notes?: string;
+  items: Array<{
+    itemCode: string;
+    itemName: string;
+    category: MaterialCategory;
+    quantity: number;
+    unit: string;
+    rackLocation: string;
+  }>;
+}
+
 export interface SOPWorkflowStep {
   id: number;
   process: string;
@@ -182,6 +219,52 @@ export type SubconDiscrepancyAction =
   | 'AFKIR_REPLACE'       // Afkir Total - Subkon Wajib Ganti Potongan Bahan Baru
   | 'SESUAI_QC';          // Sesuai Spesifikasi (Tidak Ada Masalah)
 
+export type SubconIssueCategory =
+  | 'Normal / Lancar'
+  | 'Mesin Bermasalah / Breakdown'
+  | 'Bahan Baku / Panel Kurang'
+  | 'Operator Absen / Kurang Tenaga'
+  | 'Masalah Kualitas (Reject Tinggi)'
+  | 'Listrik / Utilitas Terkendala'
+  | 'Lainnya';
+
+export interface SubconDailyLog {
+  id: string;
+  date: string; // YYYY-MM-DD
+  targetPcs: number; // Target output harian
+  actualOutputPcs: number; // Capaian bagus/OK hari ini
+  rejectPcs: number; // Jumlah reject/cacat hari ini
+  workersCount?: number; // Jumlah operator/mesin aktif
+  hasIssue: boolean; // Apakah ada kendala/masalah produksi?
+  issueCategory?: SubconIssueCategory;
+  issueNotes?: string; // Catatan kendala harian dari subkon
+  inputBy: string; // Nama PIC / Akun Subkon yang menginput
+  updatedAt: string;
+}
+
+export interface SubconEarlyWarning {
+  taskId: string;
+  subconName: string;
+  styleCode: string;
+  serviceType: string;
+  daysUntilDeadline: number; // <= 3 berarti masuk periode H-3
+  estReturnDate: string;
+  quantitySend: number;
+  totalCompletedPcs: number;
+  remainingQty: number;
+  dailyTargetPcs: number;
+  avgActualDailyPcs: number;
+  requiredDailyRateToFinish: number;
+  projectedDelayDays: number;
+  severity: 'WARNING_H3' | 'OVERDUE' | 'AT_RISK';
+  reasons: string[];
+  latestIssue?: {
+    date: string;
+    category: string;
+    notes: string;
+  };
+}
+
 export interface SubcontractorTask {
   id: string;
   subconName: string;
@@ -199,6 +282,12 @@ export interface SubcontractorTask {
   ratePerPcs: number;
   totalCost: number;
   defectPcs: number;
+  // Target Harian, Akun Khusus Subkon & Log Input Harian
+  dailyTargetPcs?: number;
+  subconAccountId?: string;
+  subconUsername?: string;
+  subconPassword?: string;
+  dailyLogs?: SubconDailyLog[];
   // Catatan Keterlambatan & Ketidaksesuaian Barang
   delayNotes?: string;
   hasDiscrepancy?: boolean;

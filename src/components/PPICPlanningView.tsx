@@ -225,10 +225,10 @@ export const PPICPlanningView: React.FC = () => {
               <span className="text-xs text-slate-400 font-medium">• Alokasi Komponen &amp; Kebutuhan Bahan</span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Alokasi Komponen Produksi &amp; Kebutuhan Bahan (Line vs. Subkon)
+              Alokasi Komponen &amp; Kebutuhan Bahan (BOM)
             </h1>
-            <p className="text-xs text-slate-600 mt-1 max-w-3xl">
-              Perencanaan PPIC berfokus murni pada kesiapan komponen dan kebutuhan bahan baku produksi. Tentukan pengerjaan komponen di <strong>Line Internal (In-House)</strong> atau <strong>Mitra Subkon</strong> beserta kebutuhan material per order.
+            <p className="text-xs text-slate-600 mt-1 max-w-2xl">
+              Distribusi pengerjaan panel pakaian (Line Internal vs Mitra Subkon) serta kalkulasi kesiapan material gudang untuk style yang diproduksi.
             </p>
           </div>
 

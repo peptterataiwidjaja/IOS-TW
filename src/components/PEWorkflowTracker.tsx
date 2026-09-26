@@ -422,297 +422,152 @@ export const PEWorkflowTracker: React.FC = () => {
       </div>
 
       {/* ======================================================== */}
-      {/* SCREEN-ONLY: FILTER PERIODE (BULAN & TAHUN) & MODEL STYLE DROPDOWN */}
-      {/* ======================================================== */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs print:hidden space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
-              <CalendarDays className="w-5 h-5 text-blue-700" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black text-slate-900">
-                  Filter Periode &amp; Pemilihan Model Style
-                </h3>
-                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                  {periodLabel}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500">
-                Pilih periode bulan dan tahun produksi, serta pilih model style garmen langsung melalui dropdown.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handlePrint}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-              title="Cetak lembar kerja alur SOP &amp; spesifikasi teknis (PDF)"
-            >
-              <Printer className="w-4 h-4 text-amber-400" />
-              <span>Cetak PDF Alur SOP</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3 Dropdown Controls: Bulan, Tahun, dan Model Style */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80">
-          {/* 1. Filter Bulan */}
+      {/* SCREEN-ONLY: COMPACT UNIFIED HEADER, FILTERS & PROGRESS */}
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs print:hidden space-y-4">
+        
+        {/* Top Row: Title, Summary Metrics & Actions */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
-              <span>Bulan:</span>
-            </label>
-            <div className="relative">
-              <select
-                value={selectedMonth}
-                onChange={(e) => handlePeriodChange(selectedYear, e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white hover:border-blue-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs transition-all"
-              >
-                <option value="ALL">Semua Bulan (Januari - Desember)</option>
-                {MONTH_NAMES.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label} ({m.value})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* 2. Filter Tahun */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-blue-600" />
-              <span>Tahun:</span>
-            </label>
-            <div className="relative">
-              <select
-                value={selectedYear}
-                onChange={(e) => handlePeriodChange(e.target.value, selectedMonth)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white hover:border-blue-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs transition-all"
-              >
-                <option value="ALL">Semua Tahun (Seluruh Arsip)</option>
-                {availableYears.map((y) => (
-                  <option key={y} value={String(y)}>
-                    Tahun {y}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* 3. Model Style (Dropdown) */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center justify-between">
-              <span className="flex items-center gap-1">
-                <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Model Style Garment:</span>
-              </span>
-              <span className={`text-[10px] font-bold ${stylesInSelectedPeriod.length === 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                {stylesInSelectedPeriod.length === 0 ? 'Kosong (0 style)' : `${stylesInSelectedPeriod.length} style aktif`}
-              </span>
-            </label>
-            <div className="relative">
-              <select
-                value={activeStyle ? activeStyle.id : ''}
-                onChange={(e) => setSelectedStyleId(e.target.value)}
-                disabled={stylesInSelectedPeriod.length === 0}
-                className={`w-full px-3 py-2 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
-                  stylesInSelectedPeriod.length === 0
-                    ? 'border-dashed border-amber-300 bg-amber-50/60 text-amber-900 cursor-not-allowed'
-                    : 'border-blue-400 bg-blue-50/40 text-blue-950 hover:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer'
-                }`}
-              >
-                {stylesInSelectedPeriod.length === 0 ? (
-                  <option value="">(Kosong — Tidak ada model style yang sesuai periode ini)</option>
-                ) : (
-                  stylesInSelectedPeriod.map((style) => (
-                    <option key={style.id} value={style.id}>
-                      {style.code} — {style.name} ({style.buyer} • {style.targetQuantityPcs.toLocaleString()} Pcs • {style.status})
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Selected Style Quick Summary Pill */}
-        {activeStyle ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono font-black text-xs px-2 py-0.5 rounded bg-blue-700 text-white">
-                {activeStyle.code}
-              </span>
-              <span className="font-extrabold text-slate-900">{activeStyle.name}</span>
-              <span className="text-slate-400">•</span>
-              <span className="text-slate-600">Buyer: <strong>{activeStyle.buyer}</strong></span>
-              <span className="text-slate-400">•</span>
-              <span className="text-slate-600">Target: <strong>{activeStyle.targetQuantityPcs.toLocaleString()} Pcs</strong></span>
-              <span className="text-slate-400">•</span>
-              <span className="text-red-700 font-bold">Delivery: {activeStyle.deliveryDate}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                activeStyle.status === 'Cutting' ? 'bg-amber-100 text-amber-800' :
-                activeStyle.status === 'Sewing' ? 'bg-purple-100 text-purple-800' :
-                activeStyle.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
-                'bg-blue-100 text-blue-800'
-              }`}>
-                Status: {activeStyle.status}
-              </span>
-              <span className="text-xs font-bold text-emerald-700">
-                {progressPercent}% Siap
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between gap-2 text-xs bg-amber-50/80 p-2.5 rounded-xl border border-amber-200 text-amber-900">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span className="font-bold">Model Style Kosong:</span>
-              <span>Tidak ada model style garment yang sesuai dengan filter bulan &amp; tahun {periodLabel}. Pilihan otomatis dikosongkan.</span>
-            </div>
-            <button
-              onClick={handleResetPeriod}
-              className="text-[11px] font-bold text-blue-700 hover:text-blue-900 underline cursor-pointer shrink-0"
-            >
-              Reset ke Semua Periode &rarr;
-            </button>
-          </div>
-        )}
-      </div>
-      
-      {/* Top Banner: Production Engineering Control & Style Status */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm print:hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2.5 py-0.5 rounded-md bg-red-100 text-red-700 text-xs font-black flex items-center gap-1 border border-red-200">
-                <Cpu className="w-3.5 h-3.5 text-red-600" />
-                Production Engineering (PE) Command Center
-              </span>
-              <span className="text-xs text-slate-400 font-medium">• Matriks Standar Operasional PT Teratai Widjaja</span>
-            </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              Alur Kerja SOP Produksi &amp; Tracking Tanggal Aktual
+            <h1 className="text-lg font-black text-slate-900 tracking-tight">
+              Alur Kerja 14 Tahap SOP &amp; Tracking Tanggal Aktual
             </h1>
-            <p className="text-xs text-slate-600 mt-1 max-w-3xl">
-              Memantau alur terintegrasi 14+ tahap: Breakdown proses RnD, kebutuhan mesin, PPS, pilot sample, technical meeting, PPM hingga serah terima material gudang &amp; potong. Dilengkapi input tanggal aktual untuk perbandingan jadwal real-time.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Pilih model pakaian, pantau tahapan persiapan produksi, dan isi tanggal realisasi aktual.
             </p>
           </div>
 
-          {/* Quick Metrics & Print Button */}
-          <div className="flex items-center gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-            <div className="text-center px-2">
-              <div className="text-xs text-slate-500 font-medium">Target Order</div>
-              <div className="text-lg font-black text-slate-900">{activeStyle ? activeStyle.targetQuantityPcs.toLocaleString() : '0'} <span className="text-xs font-normal">Pcs</span></div>
-            </div>
-            <div className="h-8 w-px bg-slate-200" />
-            <div className="text-center px-2">
-              <div className="text-xs text-slate-500 font-medium">Tahap Selesai</div>
-              <div className="text-lg font-black text-blue-700">{completedCount} <span className="text-xs font-normal text-slate-500">/ {activeStyle ? activeStyle.steps.length : 0}</span></div>
-            </div>
-            <div className="h-8 w-px bg-slate-200" />
-            <div className="text-center px-2">
-              <div className="text-xs text-slate-500 font-medium">Progress SOP</div>
-              <div className="text-lg font-black text-emerald-600">{progressPercent}%</div>
-            </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            {activeStyle && (
+              <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
+                <div>
+                  <span className="text-slate-500">Order: </span>
+                  <strong className="text-slate-900">{activeStyle.targetQuantityPcs.toLocaleString()} Pcs</strong>
+                </div>
+                <span className="text-slate-300">·</span>
+                <div>
+                  <span className="text-slate-500">Selesai: </span>
+                  <strong className="text-blue-700">{completedCount}/{activeStyle.steps.length} Tahap</strong>
+                </div>
+                <span className="text-slate-300">·</span>
+                <strong className="text-emerald-700">{progressPercent}% Siap</strong>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('new-style')}
+              className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              + Input Model Baru
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5 text-amber-400" />
+              <span>Cetak PDF</span>
+            </button>
           </div>
         </div>
 
-        {/* Style Overview Cards */}
-        {activeStyle ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4 text-xs">
-            <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-100 flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-blue-600 text-white font-black text-sm">
-                TW
-              </div>
-              <div>
-                <div className="text-slate-500 font-medium text-[11px]">Model Aktif</div>
-                <div className="font-extrabold text-blue-950 text-sm">{activeStyle.code}</div>
-                <div className="text-[11px] text-slate-600 truncate">{activeStyle.name}</div>
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div className="text-slate-500 font-medium text-[11px]">Buyer &amp; Target Delivery</div>
-              <div className="font-bold text-slate-800 text-xs mt-0.5">{activeStyle.buyer}</div>
-              <div className="text-red-600 font-semibold flex items-center gap-1 mt-0.5">
-                <Calendar className="w-3 h-3 text-red-500" />
-                <span>Deadline: {activeStyle.deliveryDate}</span>
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div className="text-slate-500 font-medium text-[11px]">Tahap Kritis Saat Ini</div>
-              <div className="font-bold text-slate-900 text-xs truncate mt-0.5">
-                Tahap #{activeStyle.currentWorkflowStep}: {activeStyle.steps.find(s => s.id === activeStyle.currentWorkflowStep)?.process || 'Final QC'}
-              </div>
-              <div className="text-blue-700 font-semibold mt-0.5">
-                PIC Dept: {activeStyle.steps.find(s => s.id === activeStyle.currentWorkflowStep)?.picDept || '-'}
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500 font-medium">Alokasi Anggaran</span>
-                <span className="font-bold text-slate-700">Rp {(activeStyle.allocatedBudget || 0).toLocaleString('id-ID')}</span>
-              </div>
-              <div className="w-full bg-slate-200 rounded-full h-2 mt-2 overflow-hidden">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, progressPercent)}%` }}
-                />
-              </div>
-              <div className="text-[10px] text-slate-500 text-right mt-1 font-semibold">
-                Kesiapan Produksi: {progressPercent}%
-              </div>
-            </div>
+        {/* Middle Row: Compact 3-Column Filter (Bulan, Tahun, Model Style) */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div className="md:col-span-3">
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">Filter Bulan</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => handlePeriodChange(selectedYear, e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="ALL">Semua Bulan</option>
+              {MONTH_NAMES.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label} ({m.value})
+                </option>
+              ))}
+            </select>
           </div>
-        ) : (
-          <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-500">
-            Silakan pilih periode yang memiliki model style aktif, atau klik tombol <strong>Reset ke Semua Periode</strong> di atas.
-          </div>
-        )}
-      </div>
 
-      {/* Filter and Actions Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs print:hidden">
-        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-blue-600" />
-            Filter Dept:
-          </span>
-          {['ALL', 'PE', 'PPIC', 'WAREHOUSE', 'PRODUCTION'].map((dept) => (
-            <button
-              key={dept}
-              onClick={() => setSelectedDeptFilter(dept)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                selectedDeptFilter === dept
-                  ? 'bg-blue-700 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          <div className="md:col-span-3">
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">Filter Tahun</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => handlePeriodChange(e.target.value, selectedMonth)}
+              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="ALL">Semua Tahun</option>
+              {availableYears.map((y) => (
+                <option key={y} value={String(y)}>
+                  Tahun {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-6">
+            <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center justify-between">
+              <span>Model / Style Garment</span>
+              <span className="text-[10px] text-slate-400">{stylesInSelectedPeriod.length} style tersedia</span>
+            </label>
+            <select
+              value={activeStyle ? activeStyle.id : ''}
+              onChange={(e) => setSelectedStyleId(e.target.value)}
+              disabled={stylesInSelectedPeriod.length === 0}
+              className={`w-full px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                stylesInSelectedPeriod.length === 0
+                  ? 'border-dashed border-amber-300 bg-amber-50 text-amber-900 cursor-not-allowed'
+                  : 'border-blue-400 bg-blue-50/30 text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer'
               }`}
             >
-              {dept === 'ALL' ? 'Semua Tahap' : dept}
-            </button>
-          ))}
+              {stylesInSelectedPeriod.length === 0 ? (
+                <option value="">(Tidak ada model pada periode {periodLabel})</option>
+              ) : (
+                stylesInSelectedPeriod.map((style) => (
+                  <option key={style.id} value={style.id}>
+                    {style.code} — {style.name} (Buyer: {style.buyer} · Delivery: {style.deliveryDate})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handlePrint}
-            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5 border border-slate-300 transition-colors cursor-pointer"
-          >
-            <Printer className="w-3.5 h-3.5 text-slate-600" />
-            <span>Print Alur</span>
-          </button>
-          <span className="text-xs text-slate-500">
-            Menampilkan <strong>{filteredSteps.length}</strong> dari <strong>{activeStyle ? activeStyle.steps.length : 0}</strong> tahapan
-          </span>
+        {/* Bottom Row: Department Segmented Filter & Active Style Metadata */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg overflow-x-auto">
+            {['ALL', 'PE', 'PPIC', 'WAREHOUSE', 'PRODUCTION'].map((dept) => (
+              <button
+                key={dept}
+                onClick={() => setSelectedDeptFilter(dept)}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedDeptFilter === dept
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {dept === 'ALL' ? 'Semua Tahap' : dept}
+              </button>
+            ))}
+          </div>
+
+          {activeStyle ? (
+            <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
+              <span>Buyer: <strong className="text-slate-900">{activeStyle.buyer}</strong></span>
+              <span>·</span>
+              <span>Mulai: <strong className="text-slate-900">{activeStyle.startDate}</strong></span>
+              <span>·</span>
+              <span>Delivery: <strong className="text-red-600">{activeStyle.deliveryDate}</strong></span>
+            </div>
+          ) : (
+            <button
+              onClick={handleResetPeriod}
+              className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
+            >
+              Reset Filter Periode &rarr;
+            </button>
+          )}
         </div>
       </div>
 

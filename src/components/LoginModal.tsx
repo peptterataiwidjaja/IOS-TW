@@ -23,7 +23,7 @@ interface LoginModalProps {
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, setCurrentUser, users, setIsUserAccessModalOpen } = useApp();
+  const { currentUser, setCurrentUser, users, setIsUserAccessModalOpen, setActiveTab } = useApp();
 
   if (!isOpen) return null;
 
@@ -31,6 +31,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     const selected = users.find(u => u.id === userId);
     if (selected) {
       setCurrentUser(selected);
+      if (selected.role === 'SUBCON') {
+        setActiveTab('subcon');
+      }
       onClose();
     }
   };

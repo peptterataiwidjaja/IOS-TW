@@ -4,9 +4,13 @@ import {
   UserRole, 
   StockItem, 
   StockTransaction, 
+  RequisitionCartItem,
+  SubmittedRequisitionReceipt,
   ProductionStyle, 
   CashFlowRecord, 
   SubcontractorTask,
+  SubconDailyLog,
+  SubconEarlyWarning,
   SOPWorkflowStep,
   ProductionComponentAllocation,
   ProductionMaterialRequirement
@@ -74,7 +78,10 @@ interface AppContextType {
     deliveryDate: string;
     allocatedBudget?: number;
     dailyTargetPcs?: number;
+    primaryRoute?: 'LINE' | 'SUBCON' | 'HYBRID';
+    autoSeedMaterials?: boolean;
   }) => void;
+  deleteStyle: (styleId: string) => void;
 
   // Stock State & Actions
   stock: StockItem[];
@@ -93,6 +100,22 @@ interface AppContextType {
     reason: string;
     notes?: string;
   }) => { success: boolean; message: string; isCrossStyle: boolean };
+
+  // Requisition Cart (Pengambilan Barang Berbasis Keranjang Sesuai Style)
+  requisitionCart: RequisitionCartItem[];
+  addToRequisitionCart: (item: StockItem, quantity?: number, notes?: string) => { success: boolean; message: string };
+  removeFromRequisitionCart: (stockItemId: string) => void;
+  updateCartItemQuantity: (stockItemId: string, quantity: number) => void;
+  clearRequisitionCart: () => void;
+  submitRequisitionCart: (params: {
+    destinationDept: StockTransaction['destinationDept'];
+    picReceiver: string;
+    referenceDoc?: string;
+    reason?: string;
+    notes?: string;
+  }) => { success: boolean; message: string; receipt?: SubmittedRequisitionReceipt };
+  lastSubmittedRequisition: SubmittedRequisitionReceipt | null;
+  setLastSubmittedRequisition: (receipt: SubmittedRequisitionReceipt | null) => void;
 
   // Workflow SOP
   updateWorkflowStep: (styleId: string, stepId: number, updates: Partial<SOPWorkflowStep>) => void;
@@ -118,7 +141,17 @@ interface AppContextType {
   // Subcontractor
   subconTasks: SubcontractorTask[];
   updateSubconTask: (id: string, updates: Partial<SubcontractorTask>) => void;
-  addSubconTask: (task: Omit<SubcontractorTask, 'id'>) => void;
+  addSubconTask: (
+    task: Omit<SubcontractorTask, 'id'>,
+    accountOptions?: {
+      createDedicatedAccount: boolean;
+      username?: string;
+      password?: string;
+    }
+  ) => { taskId: string; credentials?: { username: string; password: string } };
+  addSubconDailyLog: (taskId: string, log: Omit<SubconDailyLog, 'id' | 'updatedAt'>) => { success: boolean; message: string };
+  deleteSubconDailyLog: (taskId: string, logId: string) => void;
+  subconWarnings: SubconEarlyWarning[];
 
   // Notifications & Alerts
   lowStockItems: StockItem[];
@@ -154,7 +187,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Users state with PE customization persistence
   const [users, setUsers] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('pt_tw_users_v2');
+    const saved = localStorage.getItem('pt_tw_users_v3');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -204,7 +237,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [subconTasks, setSubconTasks] = useState<SubcontractorTask[]>(() => {
-    const saved = localStorage.getItem('pt_tw_subcon');
+    const saved = localStorage.getItem('pt_tw_subcon_v3');
     return saved ? JSON.parse(saved) : INITIAL_SUBCON_TASKS;
   });
 
@@ -228,6 +261,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isUserAccessModalOpen, setIsUserAccessModalOpen] = useState<boolean>(false);
   const [isGoogleScriptModalOpen, setIsGoogleScriptModalOpen] = useState<boolean>(false);
   const [isIssueStockModalOpen, setIsIssueStockModalOpen] = useState<boolean>(false);
+
+  // Requisition Cart State (Pengambilan Barang Berbasis Keranjang Sesuai Style)
+  const [requisitionCart, setRequisitionCart] = useState<RequisitionCartItem[]>(() => {
+    const saved = localStorage.getItem('pt_tw_requisition_cart');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  });
+  const [lastSubmittedRequisition, setLastSubmittedRequisition] = useState<SubmittedRequisitionReceipt | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('pt_tw_requisition_cart', JSON.stringify(requisitionCart));
+  }, [requisitionCart]);
 
   // Company Logo Customization (persisted in localStorage)
   const [companyLogo, setCompanyLogoState] = useState<string | null>(() => {
@@ -270,7 +321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem('pt_tw_users_v2', JSON.stringify(users));
+    localStorage.setItem('pt_tw_users_v3', JSON.stringify(users));
   }, [users]);
 
   useEffect(() => {
@@ -294,7 +345,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [cashFlow]);
 
   useEffect(() => {
-    localStorage.setItem('pt_tw_subcon', JSON.stringify(subconTasks));
+    localStorage.setItem('pt_tw_subcon_v3', JSON.stringify(subconTasks));
   }, [subconTasks]);
 
   useEffect(() => {
@@ -316,6 +367,105 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Auto count pending funds to check
   const pendingCashFlowCount = cashFlow.filter(cf => cf.status === 'Pending Check').length;
+
+  // Early Warning Engine (H-3 Sebelum Deadline & Analisis Target Harian Subkon)
+  const subconWarnings: SubconEarlyWarning[] = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const warnings: SubconEarlyWarning[] = [];
+
+    subconTasks.forEach(task => {
+      if (task.status === 'Completed' || task.quantityReceived >= task.quantitySend) {
+        return;
+      }
+
+      const estDate = new Date(task.estReturnDate + 'T00:00:00');
+      const diffTime = estDate.getTime() - today.getTime();
+      const daysUntilDeadline = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      const logs = task.dailyLogs || [];
+      const totalLoggedOutput = logs.reduce((sum, l) => sum + l.actualOutputPcs, 0);
+      const totalCompletedPcs = Math.max(task.quantityReceived, totalLoggedOutput);
+      const remainingQty = Math.max(0, task.quantitySend - totalCompletedPcs);
+
+      // Estimate daily target if not explicitly set
+      const sendD = new Date(task.sendDate + 'T00:00:00');
+      const totalPlannedDays = Math.max(1, Math.ceil((estDate.getTime() - sendD.getTime()) / (1000 * 60 * 60 * 24)));
+      const dailyTargetPcs = task.dailyTargetPcs || Math.ceil(task.quantitySend / totalPlannedDays);
+
+      const avgActualDailyPcs = logs.length > 0
+        ? Math.round(totalLoggedOutput / logs.length)
+        : (totalCompletedPcs > 0 ? totalCompletedPcs : 0);
+
+      const effectiveDaysLeft = Math.max(1, daysUntilDeadline);
+      const requiredDailyRateToFinish = daysUntilDeadline <= 0
+        ? remainingQty
+        : Math.ceil(remainingQty / effectiveDaysLeft);
+
+      const currentVelocity = avgActualDailyPcs > 0 ? avgActualDailyPcs : dailyTargetPcs;
+      const daysNeededAtCurrentVelocity = currentVelocity > 0 ? Math.ceil(remainingQty / currentVelocity) : 99;
+      const projectedDelayDays = Math.max(0, daysNeededAtCurrentVelocity - Math.max(0, daysUntilDeadline));
+
+      // Check latest reported issue in logs
+      const logsWithIssues = logs.filter(l => l.hasIssue);
+      const latestIssueLog = logsWithIssues.length > 0 ? logsWithIssues[logsWithIssues.length - 1] : undefined;
+
+      const isBelowDailyTarget = logs.length > 0 && avgActualDailyPcs < dailyTargetPcs * 0.92;
+      const isWithinH3 = daysUntilDeadline <= 3 && daysUntilDeadline >= 0;
+      const isOverdue = daysUntilDeadline < 0 || task.status === 'Delayed';
+      const hasProblem = Boolean(latestIssueLog) || isBelowDailyTarget || projectedDelayDays > 0 || task.hasDiscrepancy || (isWithinH3 && remainingQty > dailyTargetPcs * Math.max(1, daysUntilDeadline));
+
+      // Trigger warning if within 3 days before deadline (H-3) with any risk/unfinished work, OR if overdue, OR if active issue/delay predicted within 3 days
+      if ((isWithinH3 && hasProblem) || isOverdue || Boolean(latestIssueLog) || projectedDelayDays >= 1) {
+        const reasons: string[] = [];
+
+        if (isOverdue) {
+          reasons.push(`Melewati batas estimasi kembali (${Math.abs(daysUntilDeadline)} hari terlambat), sisa ${remainingQty.toLocaleString()} Pcs`);
+        } else if (isWithinH3) {
+          reasons.push(`Peringatan H-${daysUntilDeadline} sebelum deadline (${task.estReturnDate}) — sisa ${remainingQty.toLocaleString()} Pcs belum selesai`);
+        }
+
+        if (latestIssueLog) {
+          reasons.push(`Kendala dilaporkan Subkon (${latestIssueLog.date}): ${latestIssueLog.issueCategory || 'Masalah Produksi'} — "${latestIssueLog.issueNotes || '-'}"`);
+        }
+
+        if (isBelowDailyTarget) {
+          reasons.push(`Rata-rata aktual harian (${avgActualDailyPcs} pcs/hr) di bawah target (${dailyTargetPcs} pcs/hr)`);
+        }
+
+        if (projectedDelayDays > 0 && !isOverdue) {
+          reasons.push(`Prediksi terlambat +${projectedDelayDays} hari jika kecepatan tidak dinaikkan ke ${requiredDailyRateToFinish} pcs/hari`);
+        }
+
+        warnings.push({
+          taskId: task.id,
+          subconName: task.subconName,
+          styleCode: task.styleCode,
+          serviceType: task.type,
+          daysUntilDeadline,
+          estReturnDate: task.estReturnDate,
+          quantitySend: task.quantitySend,
+          totalCompletedPcs,
+          remainingQty,
+          dailyTargetPcs,
+          avgActualDailyPcs,
+          requiredDailyRateToFinish,
+          projectedDelayDays,
+          severity: isOverdue ? 'OVERDUE' : isWithinH3 ? 'WARNING_H3' : 'AT_RISK',
+          reasons,
+          latestIssue: latestIssueLog
+            ? {
+                date: latestIssueLog.date,
+                category: latestIssueLog.issueCategory || 'Kendala Produksi',
+                notes: latestIssueLog.issueNotes || ''
+              }
+            : undefined
+        });
+      }
+    });
+
+    return warnings.sort((a, b) => a.daysUntilDeadline - b.daysUntilDeadline);
+  }, [subconTasks]);
 
   // Login handler (no password required on initial login)
   const login = (username: string) => {
@@ -342,10 +492,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthenticated(false);
   };
 
-  // Check tab permissions (Akses & Akun tab is accessible to all logged-in users; PE has full admin control)
+  // Check tab permissions (Input Model Baru & Akses Akun tab are accessible to all logged-in users; Subcon focuses on subcon tab)
   const isTabAllowed = (tabId: string): boolean => {
     if (tabId === 'user-access') {
-      return true; // All authenticated users can open Akses & Akun
+      return true;
+    }
+    if (currentUser.role === 'SUBCON') {
+      return currentUser.allowedTabs.includes(tabId) || tabId === 'subcon';
+    }
+    if (tabId === 'new-style') {
+      return true;
     }
     if (currentUser.role === 'PE') return true; // PE has full administrative access
     return currentUser.allowedTabs.includes(tabId);
@@ -503,8 +659,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deliveryDate: string;
     allocatedBudget?: number;
     dailyTargetPcs?: number;
+    primaryRoute?: 'LINE' | 'SUBCON' | 'HYBRID';
+    autoSeedMaterials?: boolean;
   }) => {
     const newId = `style-${Date.now()}`;
+    const cleanCode = params.code.trim().toUpperCase();
+    const cleanName = params.name.trim();
     
     // Generate scheduled steps adapted to the new style's start and delivery dates
     const startMs = new Date(params.startDate).getTime();
@@ -526,8 +686,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newStyle: ProductionStyle = {
       id: newId,
-      code: params.code.trim().toUpperCase(),
-      name: params.name.trim(),
+      code: cleanCode,
+      name: cleanName,
       buyer: params.buyer.trim(),
       targetQuantityPcs: params.targetQuantityPcs,
       startDate: params.startDate,
@@ -538,12 +698,146 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cuttingProgressPcs: 0,
       sewingProgressPcs: 0,
       qcPassedPcs: 0,
+      primaryRoute: params.primaryRoute || 'HYBRID',
       allocatedBudget: params.allocatedBudget || 120000000,
       usedBudget: 0
     };
 
     setStyles(prev => [newStyle, ...prev]);
     setSelectedStyleId(newId);
+
+    // Optionally seed starter stock & BOM materials for this new style so users can immediately test stock/cart/BOM
+    if (params.autoSeedMaterials) {
+      const now = new Date();
+      const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+      const qtyPcs = params.targetQuantityPcs || 1000;
+      const fabricNeed = Math.ceil(qtyPcs * 1.5);
+      const threadNeed = Math.ceil(qtyPcs * 0.1);
+
+      const seededStock: StockItem[] = [
+        {
+          id: `stk-${Date.now()}-1`,
+          code: `FAB-${cleanCode}`,
+          name: `Kain Utama ${cleanName}`,
+          category: 'Kain Utama (Fabric)',
+          styleCode: cleanCode,
+          styleName: cleanName,
+          currentStock: fabricNeed + 200,
+          minStockLevel: Math.max(50, Math.round(fabricNeed * 0.15)),
+          unit: 'Yard',
+          rackLocation: 'Gudang-A / Rak 02',
+          unitPrice: 32000,
+          supplier: 'PT Tekstil Nusantara',
+          lastUpdated: timestamp,
+          notes: `Alokasi awal otomatis untuk ${cleanCode}`
+        },
+        {
+          id: `stk-${Date.now()}-2`,
+          code: `THR-${cleanCode}`,
+          name: `Benang Jahit Poliester 40/2 (${cleanCode})`,
+          category: 'Benang Jahit',
+          styleCode: cleanCode,
+          styleName: cleanName,
+          currentStock: threadNeed + 50,
+          minStockLevel: 30,
+          unit: 'Cones',
+          rackLocation: 'Gudang-B / Rak 04',
+          unitPrice: 18500,
+          supplier: 'PT Coats Thread',
+          lastUpdated: timestamp,
+          notes: `Benang produksi ${cleanCode}`
+        },
+        {
+          id: `stk-${Date.now()}-3`,
+          code: `ACC-${cleanCode}`,
+          name: `Aksesoris, Label & Polybag (${cleanCode})`,
+          category: 'Aksesoris & Hangtag',
+          styleCode: cleanCode,
+          styleName: cleanName,
+          currentStock: qtyPcs + 150,
+          minStockLevel: 200,
+          unit: 'Set',
+          rackLocation: 'Gudang-C / Rak 01',
+          unitPrice: 3500,
+          supplier: 'CV Aksesoris Garmen',
+          lastUpdated: timestamp,
+          notes: `Set aksesoris lengkap ${cleanCode}`
+        }
+      ];
+
+      setStock(prev => [...seededStock, ...prev]);
+
+      const seededBOM: ProductionMaterialRequirement[] = [
+        {
+          id: `bom-${Date.now()}-1`,
+          styleCode: cleanCode,
+          materialName: `Kain Utama ${cleanName}`,
+          category: 'Kain Utama (Fabric)',
+          usedForComponent: 'Body Utama & Lengan',
+          consumptionPerPcs: 1.5,
+          wasteAllowancePercent: 3,
+          unit: 'Yard',
+          totalRequired: fabricNeed,
+          availableStock: fabricNeed + 200,
+          allocatedFromWarehouseQty: fabricNeed,
+          balanceQty: 200,
+          status: 'Ready',
+          allocatedTo: 'LINE',
+          targetWorkCenter: 'Ruang Cutting & Line Sewing',
+          unitPrice: 32000
+        },
+        {
+          id: `bom-${Date.now()}-2`,
+          styleCode: cleanCode,
+          materialName: `Benang Jahit Poliester 40/2 (${cleanCode})`,
+          category: 'Benang Jahit',
+          usedForComponent: 'Seluruh Perakitan',
+          consumptionPerPcs: 0.1,
+          wasteAllowancePercent: 2,
+          unit: 'Cones',
+          totalRequired: threadNeed,
+          availableStock: threadNeed + 50,
+          allocatedFromWarehouseQty: threadNeed,
+          balanceQty: 50,
+          status: 'Ready',
+          allocatedTo: 'BOTH',
+          targetWorkCenter: 'Line Sewing & Subkon',
+          unitPrice: 18500
+        }
+      ];
+
+      setProductionMaterials(prev => [...seededBOM, ...prev]);
+
+      const seededComponents: ProductionComponentAllocation[] = [
+        {
+          id: `comp-${Date.now()}-1`,
+          styleCode: cleanCode,
+          componentName: 'Body Utama, Lengan & Perakitan Akhir',
+          panelCategory: 'Panel Utama (Main Body)',
+          qtyPerPcs: 1,
+          totalRequiredQty: qtyPcs,
+          route: params.primaryRoute === 'SUBCON' ? 'SUBCON' : 'LINE',
+          targetLocation: params.primaryRoute === 'SUBCON' ? 'Mitra Jahit Subkon' : 'Line 1 Sewing (In-House)',
+          processDescription: 'Cutting, Sewing Assembly & QC',
+          status: 'Allocated',
+          targetDate: params.deliveryDate,
+          picName: currentUser.name
+        }
+      ];
+
+      setComponentAllocations(prev => [...seededComponents, ...prev]);
+    }
+  };
+
+  const deleteStyle = (styleId: string) => {
+    if (styles.length <= 1) return;
+    setStyles(prev => {
+      const remaining = prev.filter(s => s.id !== styleId);
+      if (selectedStyleId === styleId && remaining.length > 0) {
+        setSelectedStyleId(remaining[0].id);
+      }
+      return remaining;
+    });
   };
 
   const addStockItem = (item: Omit<StockItem, 'id' | 'lastUpdated'>) => {
@@ -594,7 +888,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  // Issuing material / stock taking with style check
+  // Issuing material / stock taking with strict style check
   const issueStock = (params: {
     stockItemId: string;
     styleTarget: string;
@@ -610,6 +904,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: 'Item stok tidak ditemukan!', isCrossStyle: false };
     }
 
+    // STRICT STYLE RULE: Materials cannot be taken for a different style!
+    if (targetItem.styleCode !== params.styleTarget) {
+      return { 
+        success: false, 
+        message: `Ditolak: Pengambilan bahan di luar alokasi style dilarang! Bahan "${targetItem.name}" dialokasikan untuk style ${targetItem.styleCode}, tidak boleh diambil untuk ${params.styleTarget}.`, 
+        isCrossStyle: true 
+      };
+    }
+
     if (targetItem.currentStock < params.quantity) {
       return { 
         success: false, 
@@ -618,7 +921,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    const isCrossStyle = targetItem.styleCode !== params.styleTarget;
     const now = new Date();
     const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
 
@@ -644,7 +946,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       itemName: targetItem.name,
       styleTarget: params.styleTarget,
       allocatedStyleOfItem: targetItem.styleCode,
-      isCrossStyle,
+      isCrossStyle: false,
       quantity: params.quantity,
       unit: targetItem.unit,
       destinationDept: params.destinationDept,
@@ -653,19 +955,197 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       verifiedByPE: currentUser.role === 'PE' ? currentUser.name : undefined,
       referenceDoc: params.referenceDoc,
       reason: params.reason,
-      notes: isCrossStyle 
-        ? `[PERINGATAN CROSS-STYLE]: Barang dialokasikan untuk ${targetItem.styleCode} namun diambil untuk ${params.styleTarget}. ${params.notes || ''}`
-        : params.notes
+      notes: params.notes
     };
 
     setTransactions(prev => [newTx, ...prev]);
 
     return { 
       success: true, 
-      message: isCrossStyle 
-        ? `Berhasil dikeluarkan dengan PERINGATAN: Barang diambil di luar style asli (${targetItem.styleCode} -> ${params.styleTarget})!`
-        : `Berhasil mengeluarkan ${params.quantity} ${targetItem.unit} untuk ${params.styleTarget}.`, 
-      isCrossStyle 
+      message: `Berhasil mengeluarkan ${params.quantity} ${targetItem.unit} "${targetItem.name}" untuk style ${params.styleTarget}.`, 
+      isCrossStyle: false 
+    };
+  };
+
+  // Requisition Cart Implementation (Pengambilan Bahan Berbasis Keranjang Sesuai Style)
+  const addToRequisitionCart = (item: StockItem, quantity: number = 1, notes?: string): { success: boolean; message: string } => {
+    // 1. Strict style check: Cannot mix styles in cart!
+    if (requisitionCart.length > 0 && requisitionCart[0].styleCode !== item.styleCode) {
+      return {
+        success: false,
+        message: `Keranjang saat ini dialokasikan untuk Style ${requisitionCart[0].styleCode}. Sesuai aturan, pengambilan bahan tidak boleh lintas style! Kosongkan atau ajukan keranjang terlebih dahulu.`
+      };
+    }
+
+    if (quantity <= 0) {
+      return { success: false, message: 'Jumlah pengambilan harus lebih besar dari 0!' };
+    }
+
+    const existingIndex = requisitionCart.findIndex(c => c.stockItemId === item.id);
+    const currentQtyInCart = existingIndex >= 0 ? requisitionCart[existingIndex].quantityToIssue : 0;
+    const totalDesired = currentQtyInCart + quantity;
+
+    if (totalDesired > item.currentStock) {
+      return {
+        success: false,
+        message: `Stok tidak mencukupi! Tersedia: ${item.currentStock} ${item.unit}. Di keranjang sudah ada: ${currentQtyInCart} ${item.unit}.`
+      };
+    }
+
+    if (existingIndex >= 0) {
+      setRequisitionCart(prev => prev.map((c, idx) => {
+        if (idx === existingIndex) {
+          return { ...c, quantityToIssue: totalDesired, notes: notes || c.notes };
+        }
+        return c;
+      }));
+    } else {
+      const newCartItem: RequisitionCartItem = {
+        id: `cart-${Date.now()}-${item.id}`,
+        stockItemId: item.id,
+        itemCode: item.code,
+        itemName: item.name,
+        category: item.category,
+        styleCode: item.styleCode,
+        styleName: item.styleName,
+        currentStock: item.currentStock,
+        quantityToIssue: quantity,
+        unit: item.unit,
+        rackLocation: item.rackLocation,
+        unitPrice: item.unitPrice,
+        notes: notes || ''
+      };
+      setRequisitionCart(prev => [...prev, newCartItem]);
+    }
+
+    return {
+      success: true,
+      message: `"${item.name}" (${quantity} ${item.unit}) berhasil dimasukkan ke keranjang!`
+    };
+  };
+
+  const removeFromRequisitionCart = (stockItemId: string) => {
+    setRequisitionCart(prev => prev.filter(c => c.stockItemId !== stockItemId));
+  };
+
+  const updateCartItemQuantity = (stockItemId: string, quantity: number) => {
+    const item = stock.find(s => s.id === stockItemId);
+    const maxStock = item ? item.currentStock : 999999;
+    const safeQty = Math.max(1, Math.min(quantity, maxStock));
+    setRequisitionCart(prev => prev.map(c => {
+      if (c.stockItemId === stockItemId) {
+        return { ...c, quantityToIssue: safeQty };
+      }
+      return c;
+    }));
+  };
+
+  const clearRequisitionCart = () => {
+    setRequisitionCart([]);
+  };
+
+  const submitRequisitionCart = (params: {
+    destinationDept: StockTransaction['destinationDept'];
+    picReceiver: string;
+    referenceDoc?: string;
+    reason?: string;
+    notes?: string;
+  }): { success: boolean; message: string; receipt?: SubmittedRequisitionReceipt } => {
+    if (requisitionCart.length === 0) {
+      return { success: false, message: 'Keranjang pengambilan masih kosong! Tambahkan bahan terlebih dahulu.' };
+    }
+
+    if (!params.picReceiver.trim()) {
+      return { success: false, message: 'Wajib mengisi Nama Penanggung Jawab / PIC yang mengambil barang!' };
+    }
+
+    // Verify stock availability for each item in cart
+    for (const cartItem of requisitionCart) {
+      const stockItem = stock.find(s => s.id === cartItem.stockItemId);
+      if (!stockItem) {
+        return { success: false, message: `Bahan ${cartItem.itemName} tidak ditemukan di master stok!` };
+      }
+      if (stockItem.currentStock < cartItem.quantityToIssue) {
+        return { 
+          success: false, 
+          message: `Stok untuk "${cartItem.itemName}" tidak mencukupi! Tersedia hanya ${stockItem.currentStock} ${stockItem.unit}, diminta ${cartItem.quantityToIssue} ${cartItem.unit}.` 
+        };
+      }
+    }
+
+    const now = new Date();
+    const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+    const styleCode = requisitionCart[0].styleCode;
+    const styleName = requisitionCart[0].styleName;
+    const refDoc = params.referenceDoc?.trim() || `BON-${styleCode}-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.toTimeString().slice(0, 2)}${now.toTimeString().slice(3, 5)}`;
+
+    // Update stocks
+    const cartItemMap = new Map<string, number>(requisitionCart.map(c => [c.stockItemId, c.quantityToIssue]));
+    setStock(prev => prev.map(s => {
+      if (cartItemMap.has(s.id)) {
+        const issueQty = cartItemMap.get(s.id) ?? 0;
+        return {
+          ...s,
+          currentStock: Math.max(0, s.currentStock - issueQty),
+          lastUpdated: timestamp
+        };
+      }
+      return s;
+    }));
+
+    // Generate individual transaction records
+    const newTransactions: StockTransaction[] = requisitionCart.map((cartItem, idx) => ({
+      id: `TRX-${Date.now()}-${idx}`,
+      timestamp,
+      type: 'OUT',
+      stockItemId: cartItem.stockItemId,
+      itemCode: cartItem.itemCode,
+      itemName: cartItem.itemName,
+      styleTarget: styleCode,
+      allocatedStyleOfItem: cartItem.styleCode,
+      isCrossStyle: false,
+      quantity: cartItem.quantityToIssue,
+      unit: cartItem.unit,
+      destinationDept: params.destinationDept,
+      picReceiver: params.picReceiver.trim(),
+      picGudang: currentUser.name,
+      verifiedByPE: currentUser.role === 'PE' ? currentUser.name : undefined,
+      referenceDoc: refDoc,
+      reason: params.reason?.trim() || `Pengeluaran material untuk proses ${params.destinationDept}`,
+      notes: cartItem.notes ? `${cartItem.notes}. ${params.notes || ''}`.trim() : params.notes
+    }));
+
+    setTransactions(prev => [...newTransactions, ...prev]);
+
+    // Build Receipt for Printing
+    const receipt: SubmittedRequisitionReceipt = {
+      referenceDoc: refDoc,
+      timestamp,
+      styleCode,
+      styleName,
+      destinationDept: params.destinationDept,
+      picReceiver: params.picReceiver.trim(),
+      picGudang: currentUser.name,
+      verifiedByPE: currentUser.role === 'PE' ? currentUser.name : undefined,
+      reason: params.reason?.trim() || `Pengeluaran material untuk proses ${params.destinationDept}`,
+      notes: params.notes,
+      items: requisitionCart.map(c => ({
+        itemCode: c.itemCode,
+        itemName: c.itemName,
+        category: c.category,
+        quantity: c.quantityToIssue,
+        unit: c.unit,
+        rackLocation: c.rackLocation
+      }))
+    };
+
+    setLastSubmittedRequisition(receipt);
+    setRequisitionCart([]); // clear cart on success
+
+    return {
+      success: true,
+      message: `Pengajuan pengeluaran ${receipt.items.length} item bahan untuk style ${styleCode} berhasil diproses!`,
+      receipt
     };
   };
 
@@ -882,12 +1362,142 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const addSubconTask = (task: Omit<SubcontractorTask, 'id'>) => {
+  const addSubconTask = (
+    task: Omit<SubcontractorTask, 'id'>,
+    accountOptions?: {
+      createDedicatedAccount: boolean;
+      username?: string;
+      password?: string;
+    }
+  ): { taskId: string; credentials?: { username: string; password: string } } => {
+    const taskId = `SUB-${Date.now().toString().slice(-4)}`;
+    let subconAccountId = task.subconAccountId;
+    let subconUsername = task.subconUsername;
+    let subconPassword = task.subconPassword;
+    let createdCreds: { username: string; password: string } | undefined;
+
+    if (accountOptions?.createDedicatedAccount) {
+      const cleanUser = (accountOptions.username || `subkon_${task.subconName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').slice(0, 14)}`)
+        .trim()
+        .toLowerCase();
+      const cleanPass = (accountOptions.password || 'subcon123').trim();
+
+      const existingAcc = users.find(u => u.username.toLowerCase() === cleanUser);
+      if (existingAcc) {
+        subconAccountId = existingAcc.id;
+        subconUsername = existingAcc.username;
+        subconPassword = existingAcc.password || cleanPass;
+        createdCreds = { username: existingAcc.username, password: subconPassword };
+      } else {
+        const newAccId = `usr-sub-${Date.now().toString().slice(-5)}`;
+        const newSubconUser: UserAccount = {
+          id: newAccId,
+          username: cleanUser,
+          password: cleanPass,
+          name: task.subconName,
+          role: 'SUBCON',
+          department: `Mitra Subkon (${task.type})`,
+          email: `${cleanUser}@mitrasubkon.id`,
+          allowedTabs: ['subcon', 'transactions']
+        };
+        setUsers(prev => [...prev, newSubconUser]);
+        subconAccountId = newAccId;
+        subconUsername = cleanUser;
+        subconPassword = cleanPass;
+        createdCreds = { username: cleanUser, password: cleanPass };
+      }
+    }
+
     const newTask: SubcontractorTask = {
       ...task,
-      id: `SUB-${Date.now().toString().slice(-4)}`
+      id: taskId,
+      subconAccountId,
+      subconUsername,
+      subconPassword,
+      dailyLogs: task.dailyLogs || []
     };
     setSubconTasks(prev => [newTask, ...prev]);
+
+    return { taskId, credentials: createdCreds };
+  };
+
+  const addSubconDailyLog = (
+    taskId: string,
+    log: Omit<SubconDailyLog, 'id' | 'updatedAt'>
+  ): { success: boolean; message: string } => {
+    const targetTask = subconTasks.find(t => t.id === taskId);
+    if (!targetTask) {
+      return { success: false, message: 'Data SPK Subkon tidak ditemukan!' };
+    }
+
+    const now = new Date();
+    const updatedAt = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+
+    setSubconTasks(prev => prev.map(task => {
+      if (task.id !== taskId) return task;
+
+      const existingLogs = task.dailyLogs || [];
+      const sameDateIdx = existingLogs.findIndex(l => l.date === log.date);
+      let updatedLogs: SubconDailyLog[];
+
+      if (sameDateIdx >= 0) {
+        updatedLogs = existingLogs.map((l, idx) =>
+          idx === sameDateIdx
+            ? { ...l, ...log, updatedAt }
+            : l
+        );
+      } else {
+        const newLog: SubconDailyLog = {
+          ...log,
+          id: `LOG-${Date.now().toString().slice(-5)}`,
+          updatedAt
+        };
+        updatedLogs = [...existingLogs, newLog].sort((a, b) => a.date.localeCompare(b.date));
+      }
+
+      const totalCompletedFromLogs = updatedLogs.reduce((sum, l) => sum + l.actualOutputPcs, 0);
+      const totalDefectsFromLogs = updatedLogs.reduce((sum, l) => sum + l.rejectPcs, 0);
+      const newQuantityReceived = Math.min(task.quantitySend, Math.max(task.quantityReceived, totalCompletedFromLogs));
+      const newDefectPcs = Math.max(task.defectPcs, totalDefectsFromLogs);
+
+      let newStatus = task.status;
+      if (newQuantityReceived >= task.quantitySend) {
+        newStatus = 'Completed';
+      } else if (newQuantityReceived > 0) {
+        newStatus = 'Partial Received';
+      }
+
+      const newDelayNotes = log.hasIssue && log.issueNotes
+        ? `[Laporan Harian Subkon ${log.date} - ${log.issueCategory}]: ${log.issueNotes}`
+        : task.delayNotes;
+
+      return {
+        ...task,
+        dailyLogs: updatedLogs,
+        quantityReceived: newQuantityReceived,
+        defectPcs: newDefectPcs,
+        status: newStatus,
+        delayNotes: newDelayNotes
+      };
+    }));
+
+    return {
+      success: true,
+      message: `Data capaian harian tanggal ${log.date} (${log.actualOutputPcs} Pcs) berhasil disimpan untuk analisis!`
+    };
+  };
+
+  const deleteSubconDailyLog = (taskId: string, logId: string) => {
+    setSubconTasks(prev => prev.map(task => {
+      if (task.id !== taskId) return task;
+      const updatedLogs = (task.dailyLogs || []).filter(l => l.id !== logId);
+      const totalCompletedFromLogs = updatedLogs.reduce((sum, l) => sum + l.actualOutputPcs, 0);
+      return {
+        ...task,
+        dailyLogs: updatedLogs,
+        quantityReceived: totalCompletedFromLogs
+      };
+    }));
   };
 
   // Google Script Sync Handler
@@ -991,11 +1601,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedStyleId,
         currentStyle,
         addNewStyle,
+        deleteStyle,
         stock,
         addStockItem,
         updateStockQuantity,
         transactions,
         issueStock,
+        requisitionCart,
+        addToRequisitionCart,
+        removeFromRequisitionCart,
+        updateCartItemQuantity,
+        clearRequisitionCart,
+        submitRequisitionCart,
+        lastSubmittedRequisition,
+        setLastSubmittedRequisition,
         updateWorkflowStep,
         updateStepActualDate,
         componentAllocations,
@@ -1013,6 +1632,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         subconTasks,
         updateSubconTask,
         addSubconTask,
+        addSubconDailyLog,
+        deleteSubconDailyLog,
+        subconWarnings,
         lowStockItems,
         pendingCashFlowCount,
         activeTab,

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const AnalyticsDashboard: React.FC = () => {
-  const { stock, styles, transactions, subconTasks, componentAllocations, productionMaterials, openPrintModal } = useApp();
+  const { stock, styles, transactions, subconTasks, subconWarnings, setActiveTab, componentAllocations, productionMaterials, openPrintModal } = useApp();
   const [activeDeptTab, setActiveDeptTab] = useState<'ALL' | 'PE' | 'GUDANG' | 'PPIC' | 'PRODUKSI' | 'SUBCON' | 'ROUTING'>('ALL');
 
   // Computed metrics
@@ -336,50 +336,69 @@ export const AnalyticsDashboard: React.FC = () => {
                   <Truck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Mitra Subkon Rekanan</h3>
-                  <p className="text-[11px] text-slate-400">Ketepatan Balik &amp; Kualitas</p>
+                  <h3 className="text-sm font-bold text-slate-900">Mitra Subkon &amp; Target Harian</h3>
+                  <p className="text-[11px] text-slate-400">Analisis Log Harian &amp; Warning H-3</p>
                 </div>
               </div>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800">
-                94.5% OTD
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                subconWarnings.length > 0 ? 'bg-red-100 text-red-800' : 'bg-cyan-100 text-cyan-800'
+              }`}>
+                {subconWarnings.length > 0 ? `${subconWarnings.length} Warning H-3` : 'On-Track'}
               </span>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
                 <div className="flex justify-between font-semibold mb-1">
-                  <span className="text-slate-600">On-Time Return Delivery:</span>
-                  <span className="text-slate-900 font-bold">94.5%</span>
+                  <span className="text-slate-600">Pencapaian Target Harian Subkon:</span>
+                  <span className="text-slate-900 font-bold">84.5% Rata-rata</span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full w-[94%]" />
+                  <div className="h-full bg-cyan-600 rounded-full w-[85%]" />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between font-semibold mb-1">
-                  <span className="text-slate-600">Cacat Reject Bordir / Sablon Luar:</span>
-                  <span className="text-emerald-600 font-bold">0.32% (Sangat Rendah)</span>
+                  <span className="text-slate-600">Peringatan Dini H-3 Sebelum Deadline:</span>
+                  <span className={subconWarnings.length > 0 ? 'text-red-600 font-black' : 'text-emerald-600 font-bold'}>
+                    {subconWarnings.length > 0 ? `${subconWarnings.length} SPK Berisiko` : '0 Risiko'}
+                  </span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full w-[98%]" />
+                  <div className={`h-full rounded-full ${subconWarnings.length > 0 ? 'bg-red-500 w-[65%]' : 'bg-emerald-500 w-full'}`} />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between font-semibold mb-1">
-                  <span className="text-slate-600">Kecepatan Verifikasi Nota &amp; Hasil:</span>
-                  <span className="text-slate-900 font-bold">1 Hari Kerja</span>
+                  <span className="text-slate-600">Kepatuhan Input Akun Harian Subkon:</span>
+                  <span className="text-slate-900 font-bold">100% Aktif</span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-600 rounded-full w-[90%]" />
+                  <div className="h-full bg-emerald-500 rounded-full w-full" />
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl">
-              * Total {subconTasks.length} SPK luar tercatat dengan status mutasi panel termonitor.
-            </div>
+            {subconWarnings.length > 0 ? (
+              <div
+                onClick={() => setActiveTab('subcon')}
+                className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-900 cursor-pointer hover:bg-red-100 transition-colors"
+              >
+                <div className="font-black flex items-center gap-1 text-red-700">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Warning H-3: {subconWarnings[0].subconName} ({subconWarnings[0].styleCode})</span>
+                </div>
+                <div className="mt-0.5 text-[10px]">
+                  {subconWarnings[0].reasons[0]} — <u>Klik untuk analisis detail</u>
+                </div>
+              </div>
+            ) : (
+              <div className="pt-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl">
+                * Total {subconTasks.length} SPK luar tercatat dengan akun input harian aktif.
+              </div>
+            )}
           </div>
         )}
 

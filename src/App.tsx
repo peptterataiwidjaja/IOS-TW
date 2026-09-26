@@ -13,6 +13,7 @@ import { NewStyleModal } from './components/NewStyleModal';
 import { UserAccessManagerModal } from './components/UserAccessManagerModal';
 import { GoogleScriptSyncModal } from './components/GoogleScriptSyncModal';
 import { PEWorkflowTracker } from './components/PEWorkflowTracker';
+import { NewStyleInputView } from './components/NewStyleInputView';
 import { WarehouseStockManager } from './components/WarehouseStockManager';
 import { PPICPlanningView } from './components/PPICPlanningView';
 import { TransactionHistoryView } from './components/TransactionHistoryView';
@@ -22,18 +23,7 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { UserAccessManagerView } from './components/UserAccessManagerView';
 import { PrintPDFModal } from './components/PrintPDFModal';
 import { 
-  Building2, 
-  ShieldCheck, 
-  Cpu, 
-  Warehouse, 
-  Layers, 
-  Truck, 
-  FileSpreadsheet, 
-  BarChart3,
-  FileText,
-  UserCheck,
   Lock,
-  PlusCircle,
   Settings2
 } from 'lucide-react';
 
@@ -43,13 +33,9 @@ const MainLayout: React.FC = () => {
     activeTab, 
     setActiveTab,
     currentUser, 
-    setIsLoginModalOpen, 
-    setIsNewStyleModalOpen,
     setIsUserAccessModalOpen,
     isIssueStockModalOpen,
     setIsIssueStockModalOpen,
-    styles, 
-    currentStyle,
     isTabAllowed,
     isPrintModalOpen,
     setIsPrintModalOpen
@@ -76,10 +62,10 @@ const MainLayout: React.FC = () => {
           </p>
           <div className="pt-2 flex justify-center gap-3">
             <button
-              onClick={() => setActiveTab('pe-workflow')}
+              onClick={() => setActiveTab('new-style')}
               className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs cursor-pointer"
             >
-              Kembali ke Alur SOP
+              Kembali ke Menu Utama
             </button>
             {currentUser.role === 'PE' && (
               <button
@@ -96,6 +82,8 @@ const MainLayout: React.FC = () => {
     }
 
     switch (activeTab) {
+      case 'new-style':
+        return <NewStyleInputView />;
       case 'pe-workflow':
         return <PEWorkflowTracker />;
       case 'warehouse-stock':
@@ -120,54 +108,13 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans antialiased">
       
-      {/* Top Main Navigation Bar (White with Red & Blue Accents) */}
+      {/* Top Main Navigation Bar */}
       <div className="print:hidden no-print">
         <Navbar />
       </div>
 
-      {/* Sub Context Ribbon (Crisp White & Light Blue) */}
-      <div className="bg-white text-slate-700 border-b border-slate-200 px-4 py-2 text-xs shadow-xs print:hidden no-print">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-            </span>
-            <span className="text-slate-400 font-medium">Sistem Operasional:</span>
-            <span className="text-blue-950 font-black tracking-wide">PT Teratai Widjaja Garment Industry</span>
-            <span className="text-slate-300 hidden sm:inline">|</span>
-            <span className="text-blue-800 hidden sm:inline font-mono font-bold">
-              Model Aktif: {currentStyle.code} — {currentStyle.name}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-[11px]">
-              <span className="text-slate-400">Login Sebagai:</span>
-              <span className={`px-2 py-0.5 rounded font-bold border flex items-center gap-1 ${
-                currentUser.role === 'PE'
-                  ? 'bg-red-50 text-red-700 border-red-200'
-                  : 'bg-blue-50 text-blue-800 border-blue-200'
-              }`}>
-                <UserCheck className="w-3 h-3" />
-                {currentUser.name} ({currentUser.role})
-              </span>
-            </div>
-
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="text-[11px] font-bold text-blue-700 hover:text-blue-900 underline hover:no-underline transition-colors cursor-pointer"
-            >
-              Ganti Akun &rarr;
-            </button>
-          </div>
-
-        </div>
-      </div>
-
       {/* Main Content Viewport */}
-      <main className={`flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 print:p-0 print:m-0 print:max-w-none print:w-full ${isPrintModalOpen ? 'print:hidden' : ''}`}>
+      <main className={`flex-1 max-w-7xl w-full mx-auto p-4 sm:p-5 space-y-5 print:p-0 print:m-0 print:max-w-none print:w-full ${isPrintModalOpen ? 'print:hidden' : ''}`}>
         {renderActiveModule()}
       </main>
 

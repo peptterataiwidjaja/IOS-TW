@@ -12,6 +12,7 @@ import {
 } from '../types';
 
 export const ALL_NAV_TABS: NavTabPermission[] = [
+  { id: 'new-style', label: 'Input Model Baru', description: 'Registrasi model/style produksi baru, target order, jadwal delivery & inisialisasi SOP/bahan' },
   { id: 'pe-workflow', label: 'Alur SOP & PE', description: 'Monitoring 14 tahap SOP PE, tanggal aktual, breakdown mesin' },
   { id: 'warehouse-stock', label: 'Stok Gudang', description: 'Katalog stok bahan baku, aksesoris, & input stok' },
   { id: 'ppic-planning', label: 'Perencanaan PPIC', description: 'Alokasi komponen produksi (Line vs Subkon) & kebutuhan bahan baku (BOM)' },
@@ -33,6 +34,7 @@ export const INITIAL_USERS: UserAccount[] = [
     department: 'Production Engineering',
     email: 'pe.terataiwidjaja@gmail.com',
     allowedTabs: [
+      'new-style',
       'pe-workflow',
       'warehouse-stock',
       'ppic-planning',
@@ -117,8 +119,21 @@ export const INITIAL_USERS: UserAccount[] = [
     password: 'subcon123',
     name: 'CV Prima Bordir Mandiri',
     role: 'SUBCON',
-    department: 'Mitra Rekanan Subkon',
+    department: 'Mitra Rekanan Subkon (Bordir)',
     email: 'subcon.prima@gmail.com',
+    allowedTabs: [
+      'subcon',
+      'transactions'
+    ]
+  },
+  {
+    id: 'usr-subcon-2',
+    username: 'subcon_multi',
+    password: 'subcon123',
+    name: 'PT Multi Screen Grafika',
+    role: 'SUBCON',
+    department: 'Mitra Rekanan Subkon (Sablon)',
+    email: 'admin@multiscreen.co.id',
     allowedTabs: [
       'subcon',
       'transactions'
@@ -773,6 +788,12 @@ export const INITIAL_CASH_FLOW: CashFlowRecord[] = [
   }
 ];
 
+const getOffsetDate = (offsetDays: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().split('T')[0];
+};
+
 export const INITIAL_SUBCON_TASKS: SubcontractorTask[] = [
   {
     id: 'SUB-01',
@@ -780,18 +801,62 @@ export const INITIAL_SUBCON_TASKS: SubcontractorTask[] = [
     type: 'Bordir Komputer',
     styleCode: 'TW-JKT-88',
     quantitySend: 1200,
-    quantityReceived: 650,
+    quantityReceived: 510,
     unit: 'Pcs Panel',
-    sendDate: '2026-09-10',
-    estReturnDate: '2026-09-13',
-    actualReturnDate: '2026-09-14',
+    sendDate: getOffsetDate(-4),
+    estReturnDate: getOffsetDate(2), // H-2 Sebelum Deadline!
     status: 'Partial Received',
     picSubcon: 'Bpk. Wahyudi (Manager CV Prima)',
     picInternal: 'Ratna Kusuma (PPIC)',
     ratePerPcs: 8200,
     totalCost: 9840000,
     defectPcs: 18,
-    delayNotes: 'Terlambat 1 hari karena mesin bordir multi-head nomor 3 overhaul dinamo.',
+    dailyTargetPcs: 200,
+    subconAccountId: 'usr-subcon',
+    subconUsername: 'subcon_prima',
+    subconPassword: 'subcon123',
+    dailyLogs: [
+      {
+        id: 'LOG-101',
+        date: getOffsetDate(-3),
+        targetPcs: 200,
+        actualOutputPcs: 205,
+        rejectPcs: 2,
+        workersCount: 6,
+        hasIssue: false,
+        issueCategory: 'Normal / Lancar',
+        issueNotes: 'Mesin jalan 6 head normal.',
+        inputBy: 'CV Prima Bordir Mandiri (subcon_prima)',
+        updatedAt: `${getOffsetDate(-3)} 17:00`
+      },
+      {
+        id: 'LOG-102',
+        date: getOffsetDate(-2),
+        targetPcs: 200,
+        actualOutputPcs: 185,
+        rejectPcs: 5,
+        workersCount: 6,
+        hasIssue: false,
+        issueCategory: 'Normal / Lancar',
+        issueNotes: 'Pergantian benang gold sedikit memakan waktu.',
+        inputBy: 'CV Prima Bordir Mandiri (subcon_prima)',
+        updatedAt: `${getOffsetDate(-2)} 17:15`
+      },
+      {
+        id: 'LOG-103',
+        date: getOffsetDate(-1),
+        targetPcs: 200,
+        actualOutputPcs: 120,
+        rejectPcs: 11,
+        workersCount: 4,
+        hasIssue: true,
+        issueCategory: 'Mesin Bermasalah / Breakdown',
+        issueNotes: 'Mesin bordir multi-head #3 overhaul dinamo & tension jarum miring 1.5 cm.',
+        inputBy: 'CV Prima Bordir Mandiri (subcon_prima)',
+        updatedAt: `${getOffsetDate(-1)} 17:30`
+      }
+    ],
+    delayNotes: 'Output harian turun ke 120 pcs/hari karena mesin bordir multi-head nomor 3 overhaul dinamo (H-2 menjelang target selesai).',
     hasDiscrepancy: true,
     discrepancyType: 'Cacat Fisik / Reject (Bordir/Sablon/Jahit Rusak)',
     discrepancyAction: 'RETUR_REWORK',
@@ -805,16 +870,48 @@ export const INITIAL_SUBCON_TASKS: SubcontractorTask[] = [
     type: 'Sablon / Screen Printing',
     styleCode: 'TW-POLO-26',
     quantitySend: 2500,
-    quantityReceived: 0,
+    quantityReceived: 720,
     unit: 'Pcs Panel',
-    sendDate: '2026-09-12',
-    estReturnDate: '2026-09-18',
+    sendDate: getOffsetDate(-3),
+    estReturnDate: getOffsetDate(3), // Tepat H-3 Sebelum Deadline!
     status: 'In Progress',
     picSubcon: 'Ibu Ratih',
     picInternal: 'Ratna Kusuma (PPIC)',
     ratePerPcs: 4500,
     totalCost: 11250000,
-    defectPcs: 0
+    defectPcs: 8,
+    dailyTargetPcs: 450,
+    subconAccountId: 'usr-subcon-2',
+    subconUsername: 'subcon_multi',
+    subconPassword: 'subcon123',
+    dailyLogs: [
+      {
+        id: 'LOG-201',
+        date: getOffsetDate(-2),
+        targetPcs: 450,
+        actualOutputPcs: 440,
+        rejectPcs: 3,
+        workersCount: 10,
+        hasIssue: false,
+        issueCategory: 'Normal / Lancar',
+        issueNotes: 'Proses naik meja sablon plastisol lancar.',
+        inputBy: 'PT Multi Screen Grafika (subcon_multi)',
+        updatedAt: `${getOffsetDate(-2)} 16:45`
+      },
+      {
+        id: 'LOG-202',
+        date: getOffsetDate(-1),
+        targetPcs: 450,
+        actualOutputPcs: 280,
+        rejectPcs: 5,
+        workersCount: 7,
+        hasIssue: true,
+        issueCategory: 'Listrik / Utilitas Terkendala',
+        issueNotes: 'Lampu curing conveyor pemanas mati 1 jalur & 3 operator absen sakit, capaian turun drastis.',
+        inputBy: 'PT Multi Screen Grafika (subcon_multi)',
+        updatedAt: `${getOffsetDate(-1)} 17:10`
+      }
+    ]
   },
   {
     id: 'SUB-03',
@@ -824,15 +921,68 @@ export const INITIAL_SUBCON_TASKS: SubcontractorTask[] = [
     quantitySend: 1400,
     quantityReceived: 1385,
     unit: 'Pcs Celana',
-    sendDate: '2026-09-07',
-    estReturnDate: '2026-09-11',
-    actualReturnDate: '2026-09-13',
+    sendDate: getOffsetDate(-9),
+    estReturnDate: getOffsetDate(-4),
+    actualReturnDate: getOffsetDate(-2),
     status: 'Completed',
     picSubcon: 'Kurniawan (Studio Wash)',
     picInternal: 'Budi Santoso (PE)',
     ratePerPcs: 9500,
     totalCost: 13300000,
     defectPcs: 15,
+    dailyTargetPcs: 350,
+    subconUsername: 'subcon_denim',
+    subconPassword: 'subcon123',
+    dailyLogs: [
+      {
+        id: 'LOG-301',
+        date: getOffsetDate(-8),
+        targetPcs: 350,
+        actualOutputPcs: 360,
+        rejectPcs: 2,
+        workersCount: 8,
+        hasIssue: false,
+        issueCategory: 'Normal / Lancar',
+        inputBy: 'Bandung Denim Wash Studio',
+        updatedAt: `${getOffsetDate(-8)} 17:00`
+      },
+      {
+        id: 'LOG-302',
+        date: getOffsetDate(-7),
+        targetPcs: 350,
+        actualOutputPcs: 355,
+        rejectPcs: 3,
+        workersCount: 8,
+        hasIssue: false,
+        issueCategory: 'Normal / Lancar',
+        inputBy: 'Bandung Denim Wash Studio',
+        updatedAt: `${getOffsetDate(-7)} 17:00`
+      },
+      {
+        id: 'LOG-303',
+        date: getOffsetDate(-6),
+        targetPcs: 350,
+        actualOutputPcs: 340,
+        rejectPcs: 5,
+        workersCount: 8,
+        hasIssue: false,
+        issueCategory: 'Normal / Lancar',
+        inputBy: 'Bandung Denim Wash Studio',
+        updatedAt: `${getOffsetDate(-6)} 17:00`
+      },
+      {
+        id: 'LOG-304',
+        date: getOffsetDate(-5),
+        targetPcs: 350,
+        actualOutputPcs: 330,
+        rejectPcs: 5,
+        workersCount: 8,
+        hasIssue: false,
+        issueCategory: 'Normal / Lancar',
+        inputBy: 'Bandung Denim Wash Studio',
+        updatedAt: `${getOffsetDate(-5)} 17:00`
+      }
+    ],
     delayNotes: 'Terlambat 2 hari akibat proses pengeringan terhambat cuaca lembab.',
     hasDiscrepancy: true,
     discrepancyType: 'Kuantitas Kurang (Shortage)',
