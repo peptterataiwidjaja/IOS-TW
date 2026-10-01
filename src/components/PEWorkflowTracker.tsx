@@ -297,13 +297,16 @@ export const PEWorkflowTracker: React.FC = () => {
 
   const getStepMaxScheduledDate = (stepId: number): { maxDate: string; label: string } => {
     const offset = getSOPStepHMinusOffset(stepId);
-    if (offset === null) return { maxDate: '', label: '' };
+    if (offset === null) {
+      const postOffset = stepId === 16 ? 2 : stepId === 17 ? 7 : 10;
+      return { maxDate: '', label: `Otomatis H+${postOffset}` };
+    }
     if (offset === 0) return { maxDate: '', label: 'H-0 (Mulai Sewing)' };
-    if (isNaN(sewingStepInfo.sewingMs)) return { maxDate: '', label: `Min. H-${offset}` };
+    if (isNaN(sewingStepInfo.sewingMs)) return { maxDate: '', label: `Otomatis H-${offset}` };
     const maxMs = sewingStepInfo.sewingMs - offset * 24 * 60 * 60 * 1000;
     return {
       maxDate: new Date(maxMs).toISOString().split('T')[0],
-      label: `H-${offset}`
+      label: `Otomatis H-${offset}`
     };
   };
 
@@ -611,11 +614,20 @@ export const PEWorkflowTracker: React.FC = () => {
             <span className="text-xs font-bold text-slate-800">
               Daftar {activeStyle.steps.length} Tahap SOP ({activeStyle.code})
             </span>
-            {sewingStepInfo.sewingDate && (
-              <span className="text-[11px] font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200 print:hidden">
-                Otomatis Metode H-7 (Tahap 1–4) · H-5 (Tahap 5–8) · H-3 (Tahap 9–12) · H-1 (Tahap 13–14) dari Mulai Sewing ({sewingStepInfo.sewingDate})
+            <div className="flex items-center gap-2 flex-wrap print:hidden">
+              <label className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-950 px-2.5 py-1 rounded-lg border border-blue-200 text-xs font-bold">
+                <span>Input Mulai Sewing (H-0):</span>
+                <input
+                  type="date"
+                  value={sewingStepInfo.sewingDate}
+                  onChange={(e) => updateStyleSewingStartDate(activeStyle.id, e.target.value)}
+                  className="bg-white border border-blue-400 rounded px-2 py-0.5 text-xs font-mono font-bold text-blue-900 cursor-pointer"
+                />
+              </label>
+              <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+                Tanggal Jadwal SOP Otomatis (H-7, H-5, H-3, H-1)
               </span>
-            )}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -722,46 +734,40 @@ export const PEWorkflowTracker: React.FC = () => {
                       )}
                     </td>
 
-                    {/* Scheduled Date */}
+                    {/* Scheduled Date (Otomatis dari Mulai Sewing) */}
                     <td className="py-3 px-3 text-slate-600 font-medium print:py-1.5 print:px-2 print:border print:border-slate-300 print:text-center">
                       {(() => {
-                        const { maxDate, label: hLabel } = getStepMaxScheduledDate(step.id);
-                        if (isEditing) {
+                        const { label: hLabel } = getStepMaxScheduledDate(step.id);
+                        if (step.id === 15) {
                           return (
-                            <div className="space-y-1 print:hidden">
+                            <div className="space-y-1">
                               <input
                                 type="date"
-                                value={editDateScheduled}
-                                max={step.id < 15 && maxDate ? maxDate : undefined}
-                                onChange={(e) => setEditDateScheduled(e.target.value)}
-                                className="w-full text-xs p-1 bg-white border border-slate-300 rounded-md font-mono text-slate-800"
+                                value={step.dateScheduled || sewingStepInfo.sewingDate}
+                                onChange={(e) => updateStyleSewingStartDate(activeStyle.id, e.target.value)}
+                                className="w-full text-[11px] p-1 bg-blue-50 border border-blue-400 rounded-md font-mono font-bold text-blue-950 cursor-pointer print:hidden"
+                                title="Masukkan Tanggal Mulai Sewing (Otomatis mengatur seluruh Tanggal Jadwal SOP)"
                               />
-                              {step.id < 15 && maxDate && (
-                                <div className="text-[9px] text-blue-700 font-semibold">
-                                  Maks {hLabel}: {maxDate}
-                                </div>
-                              )}
-                              {step.id === 15 && (
-                                <div className="text-[9px] text-blue-700 font-semibold">
-                                  H-0 Mulai Sewing (Otomatis atur H-7..H-1)
-                                </div>
-                              )}
+                              <div className="hidden print:block font-mono font-bold text-[9px]">
+                                {step.dateScheduled}
+                              </div>
+                              <div className="flex justify-center">
+                                <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-900 border border-blue-300">
+                                  {hLabel}
+                                </span>
+                              </div>
                             </div>
                           );
                         }
                         return (
                           <>
-                            <div className="flex items-center justify-center gap-1 text-[11px] print:text-[9px] font-mono">
+                            <div className="flex items-center justify-center gap-1 text-[11px] print:text-[9px] font-mono font-semibold text-slate-800">
                               <Calendar className="w-3 h-3 text-slate-400 print:hidden" />
                               <span>{step.dateScheduled}</span>
                             </div>
                             {hLabel && (
                               <div className="mt-0.5 flex justify-center">
-                                <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded ${
-                                  step.id === 15
-                                    ? 'bg-blue-100 text-blue-900 border border-blue-300'
-                                    : 'bg-slate-100 text-slate-600'
-                                }`}>
+                                <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
                                   {hLabel}
                                 </span>
                               </div>

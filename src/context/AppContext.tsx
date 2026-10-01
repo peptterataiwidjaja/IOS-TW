@@ -243,12 +243,12 @@ const LEGACY_DEPT_TO_JABATAN: Record<number, string> = {
   18: 'Kepala Gudang & PE'
 };
 
-// Ensure all steps before Sewing Assembly Line (Step 15) follow H-7, H-5, H-3, H-1 relative to Sewing Assembly Line (H-0), and only Jabatan is used
+// Tanggal Jadwal di SOP selalu di-setting otomatis berdasarkan Tanggal Mulai Sewing Assembly Line (Tahap 15 = H-0)
 const normalizeSOPSteps = (
   steps: SOPWorkflowStep[],
   defaultSteps?: SOPWorkflowStep[],
   sewingStartDateOverride?: string,
-  forceAutoSchedulePreSewing?: boolean
+  _forceAutoSchedulePreSewing?: boolean
 ): SOPWorkflowStep[] => {
   const cleaned = steps.map((step, idx) => {
     const std = STANDARD_SOP_STEPS.find(s => s.id === step.id) || STANDARD_SOP_STEPS[idx];
@@ -273,45 +273,28 @@ const normalizeSOPSteps = (
   const sewingMs = new Date(targetSewingDate + 'T00:00:00').getTime();
   if (isNaN(sewingMs)) return cleaned;
 
-  // Check if pre-sewing steps need automatic H-7, H-5, H-3, H-1 assignment
-  // (either forced when startDate/Step 15 changes, or if any pre-sewing step violates its H-minus rule or had old uniform H-7 shift)
-  const allPreSewingSameDate = new Set(cleaned.filter(s => s.id < 15).map(s => s.dateScheduled)).size <= 2;
-
+  // Hitung otomatis Tanggal Jadwal seluruh tahapan berdasarkan Tanggal Mulai Sewing (H-0)
   return cleaned.map(st => {
     if (st.id === 15) {
       return { ...st, dateScheduled: targetSewingDate };
     }
     const offsetDays = getSOPStepHMinusOffset(st.id);
     if (offsetDays !== null && offsetDays > 0) {
-      const maxAllowedMs = sewingMs - offsetDays * ONE_DAY_MS;
-      const maxAllowedDateStr = new Date(maxAllowedMs).toISOString().split('T')[0];
-      const currentStepMs = new Date(st.dateScheduled + 'T00:00:00').getTime();
-
-      if (
-        forceAutoSchedulePreSewing ||
-        allPreSewingSameDate ||
-        isNaN(currentStepMs) ||
-        currentStepMs > maxAllowedMs
-      ) {
-        return {
-          ...st,
-          dateScheduled: maxAllowedDateStr
-        };
-      }
-      return st;
+      const autoScheduleMs = sewingMs - offsetDays * ONE_DAY_MS;
+      const autoScheduleDateStr = new Date(autoScheduleMs).toISOString().split('T')[0];
+      return {
+        ...st,
+        dateScheduled: autoScheduleDateStr
+      };
     }
-    // Post-sewing steps (16..18): ensure they are scheduled on or after Sewing Assembly Line
+    // Tahapan setelah Mulai Sewing (Tahap 16..18) diatur otomatis H+2, H+7, H+10 dari Mulai Sewing
     if (st.id > 15) {
-      const postOffsetDays = st.id === 16 ? 2 : st.id === 17 ? 10 : 14;
-      const minPostMs = sewingMs + (st.id - 15) * ONE_DAY_MS;
-      const defaultPostMs = sewingMs + postOffsetDays * ONE_DAY_MS;
-      const currentStepMs = new Date(st.dateScheduled + 'T00:00:00').getTime();
-      if (forceAutoSchedulePreSewing || isNaN(currentStepMs) || currentStepMs < minPostMs) {
-        return {
-          ...st,
-          dateScheduled: new Date(defaultPostMs).toISOString().split('T')[0]
-        };
-      }
+      const postOffsetDays = st.id === 16 ? 2 : st.id === 17 ? 7 : 10;
+      const autoPostMs = sewingMs + postOffsetDays * ONE_DAY_MS;
+      return {
+        ...st,
+        dateScheduled: new Date(autoPostMs).toISOString().split('T')[0]
+      };
     }
     return st;
   });
