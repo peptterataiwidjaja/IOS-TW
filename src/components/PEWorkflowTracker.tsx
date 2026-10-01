@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
+import { useApp, getSOPStepHMinusOffset } from '../context/AppContext';
 import { SOPWorkflowStep } from '../types';
 import { 
   ClipboardCheck, 
@@ -37,6 +37,7 @@ export const PEWorkflowTracker: React.FC = () => {
     setSelectedStyleId,
     updateWorkflowStep, 
     updateStepActualDate, 
+    updateStyleSewingStartDate,
     currentUser, 
     setActiveTab, 
     setIsNewStyleModalOpen,
@@ -282,19 +283,29 @@ export const PEWorkflowTracker: React.FC = () => {
     return true;
   }) : [];
 
-  // Compute Sewing Assembly Line (Step 15) date and max allowed pre-sewing schedule date (H-7 / 1 week before Sewing Assembly Line)
+  // Compute Sewing Assembly Line (Step 15 = H-0) date and per-step H-7, H-5, H-3, H-1 max allowed dates
   const sewingStepInfo = useMemo(() => {
-    if (!activeStyle) return { sewingDate: '', maxPreSewingDate: '' };
+    if (!activeStyle) return { sewingDate: '', sewingMs: NaN };
     const sewStep = activeStyle.steps.find(s => s.id === 15 || s.process.toLowerCase().includes('sewing assembly'));
-    if (!sewStep || !sewStep.dateScheduled) return { sewingDate: '', maxPreSewingDate: '' };
-    const sewMs = new Date(sewStep.dateScheduled + 'T00:00:00').getTime();
-    if (isNaN(sewMs)) return { sewingDate: sewStep.dateScheduled, maxPreSewingDate: '' };
-    const maxPreMs = sewMs - 7 * 24 * 60 * 60 * 1000;
+    const sewingDate = sewStep?.dateScheduled || activeStyle.startDate || '';
+    const sewingMs = sewingDate ? new Date(sewingDate + 'T00:00:00').getTime() : NaN;
     return {
-      sewingDate: sewStep.dateScheduled,
-      maxPreSewingDate: new Date(maxPreMs).toISOString().split('T')[0]
+      sewingDate,
+      sewingMs
     };
   }, [activeStyle]);
+
+  const getStepMaxScheduledDate = (stepId: number): { maxDate: string; label: string } => {
+    const offset = getSOPStepHMinusOffset(stepId);
+    if (offset === null) return { maxDate: '', label: '' };
+    if (offset === 0) return { maxDate: '', label: 'H-0 (Mulai Sewing)' };
+    if (isNaN(sewingStepInfo.sewingMs)) return { maxDate: '', label: `Min. H-${offset}` };
+    const maxMs = sewingStepInfo.sewingMs - offset * 24 * 60 * 60 * 1000;
+    return {
+      maxDate: new Date(maxMs).toISOString().split('T')[0],
+      label: `H-${offset}`
+    };
+  };
 
   const handlePrint = () => {
     openPrintModal('pe-workflow');
@@ -313,8 +324,9 @@ export const PEWorkflowTracker: React.FC = () => {
   const handleSaveEdit = (stepId: number) => {
     if (!activeStyle) return;
     let finalDateScheduled = editDateScheduled;
-    if (stepId < 15 && sewingStepInfo.maxPreSewingDate && finalDateScheduled > sewingStepInfo.maxPreSewingDate) {
-      finalDateScheduled = sewingStepInfo.maxPreSewingDate;
+    const { maxDate } = getStepMaxScheduledDate(stepId);
+    if (stepId < 15 && maxDate && finalDateScheduled > maxDate) {
+      finalDateScheduled = maxDate;
     }
     updateWorkflowStep(activeStyle.id, stepId, {
       notes: editNotes,
@@ -537,6 +549,17 @@ export const PEWorkflowTracker: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap tabular-nums">
               <span>Buyer: <strong className="text-slate-800">{activeStyle.buyer}</strong></span>
               <span>·</span>
+              <label className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-900 px-2 py-0.5 rounded-md border border-blue-200 font-semibold">
+                <span>Tgl Mulai (Sewing H-0):</span>
+                <input
+                  type="date"
+                  value={sewingStepInfo.sewingDate}
+                  onChange={(e) => updateStyleSewingStartDate(activeStyle.id, e.target.value)}
+                  className="bg-white border border-blue-300 rounded px-1.5 py-0.5 text-[11px] font-mono font-bold text-blue-950 cursor-pointer"
+                  title="Ubah Tanggal Mulai Sewing Assembly Line (Otomatis mengatur H-7, H-5, H-3, H-1)"
+                />
+              </label>
+              <span>·</span>
               <span>Delivery: <strong className="text-red-600">{activeStyle.deliveryDate}</strong></span>
             </div>
           ) : (
@@ -590,7 +613,7 @@ export const PEWorkflowTracker: React.FC = () => {
             </span>
             {sewingStepInfo.sewingDate && (
               <span className="text-[11px] font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200 print:hidden">
-                Jadwal Pra-Sewing (Tahap 1–14) Min. 1 Minggu Sebelum Sewing Assembly ({sewingStepInfo.sewingDate})
+                Otomatis Metode H-7 (Tahap 1–4) · H-5 (Tahap 5–8) · H-3 (Tahap 9–12) · H-1 (Tahap 13–14) dari Mulai Sewing ({sewingStepInfo.sewingDate})
               </span>
             )}
           </div>
@@ -701,34 +724,56 @@ export const PEWorkflowTracker: React.FC = () => {
 
                     {/* Scheduled Date */}
                     <td className="py-3 px-3 text-slate-600 font-medium print:py-1.5 print:px-2 print:border print:border-slate-300 print:text-center">
-                      {isEditing ? (
-                        <div className="space-y-1 print:hidden">
-                          <input
-                            type="date"
-                            value={editDateScheduled}
-                            max={step.id < 15 && sewingStepInfo.maxPreSewingDate ? sewingStepInfo.maxPreSewingDate : undefined}
-                            onChange={(e) => setEditDateScheduled(e.target.value)}
-                            className="w-full text-xs p-1 bg-white border border-slate-300 rounded-md font-mono text-slate-800"
-                          />
-                          {step.id < 15 && sewingStepInfo.maxPreSewingDate && (
-                            <div className="text-[9px] text-blue-700 font-semibold">
-                              Maks: {sewingStepInfo.maxPreSewingDate} (H-7 Sewing)
+                      {(() => {
+                        const { maxDate, label: hLabel } = getStepMaxScheduledDate(step.id);
+                        if (isEditing) {
+                          return (
+                            <div className="space-y-1 print:hidden">
+                              <input
+                                type="date"
+                                value={editDateScheduled}
+                                max={step.id < 15 && maxDate ? maxDate : undefined}
+                                onChange={(e) => setEditDateScheduled(e.target.value)}
+                                className="w-full text-xs p-1 bg-white border border-slate-300 rounded-md font-mono text-slate-800"
+                              />
+                              {step.id < 15 && maxDate && (
+                                <div className="text-[9px] text-blue-700 font-semibold">
+                                  Maks {hLabel}: {maxDate}
+                                </div>
+                              )}
+                              {step.id === 15 && (
+                                <div className="text-[9px] text-blue-700 font-semibold">
+                                  H-0 Mulai Sewing (Otomatis atur H-7..H-1)
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex items-center justify-center gap-1 text-[11px] print:text-[9px] font-mono">
-                            <Calendar className="w-3 h-3 text-slate-400 print:hidden" />
-                            <span>{step.dateScheduled}</span>
-                          </div>
-                          {step.dateCompleted && (
-                            <div className="text-[10px] text-emerald-600 font-semibold mt-0.5 print:text-black print:text-[8px]">
-                              Tuntas: {step.dateCompleted}
+                          );
+                        }
+                        return (
+                          <>
+                            <div className="flex items-center justify-center gap-1 text-[11px] print:text-[9px] font-mono">
+                              <Calendar className="w-3 h-3 text-slate-400 print:hidden" />
+                              <span>{step.dateScheduled}</span>
                             </div>
-                          )}
-                        </>
-                      )}
+                            {hLabel && (
+                              <div className="mt-0.5 flex justify-center">
+                                <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded ${
+                                  step.id === 15
+                                    ? 'bg-blue-100 text-blue-900 border border-blue-300'
+                                    : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {hLabel}
+                                </span>
+                              </div>
+                            )}
+                            {step.dateCompleted && (
+                              <div className="text-[10px] text-emerald-600 font-semibold mt-0.5 print:text-black print:text-[8px]">
+                                Tuntas: {step.dateCompleted}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
 
                     {/* Tanggal Aktual */}

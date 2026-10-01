@@ -168,9 +168,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'PE',
     assignedRole: 'PE',
     status: 'Completed',
-    dateScheduled: '2026-09-01',
-    actualDate: '2026-09-02',
-    dateCompleted: '2026-09-02',
+    dateScheduled: '2026-09-08', // H-7 dari Mulai Sewing (2026-09-15)
+    actualDate: '2026-09-08',
+    dateCompleted: '2026-09-08',
     outputDescription: 'Breakdown process disertai dengan kebutuhan mesin',
     notes: 'Kebutuhan: 24 unit single needle, 6 unit overdeck, 2 unit kansai special.',
     machineBreakdownNotes: 'SN: 24, DN: 4, Overlock 5-thread: 8, Bartack: 2',
@@ -182,9 +182,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'PE',
     assignedRole: 'PE',
     status: 'Completed',
-    dateScheduled: '2026-09-03',
-    actualDate: '2026-09-03',
-    dateCompleted: '2026-09-03',
+    dateScheduled: '2026-09-08', // H-7 dari Mulai Sewing
+    actualDate: '2026-09-08',
+    dateCompleted: '2026-09-08',
     outputDescription: 'Pendistribusian jadwal persiapan produksi kepada seluruh tim',
     notes: 'Matriks time table telah disebar ke PPIC, Gudang, Cutting, Mekanik.',
     picName: ''
@@ -195,9 +195,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'PPIC',
     assignedRole: 'PPIC',
     status: 'Completed',
-    dateScheduled: '2026-09-04',
-    actualDate: '2026-09-05',
-    dateCompleted: '2026-09-05',
+    dateScheduled: '2026-09-08', // H-7 dari Mulai Sewing
+    actualDate: '2026-09-08',
+    dateCompleted: '2026-09-08',
     outputDescription: 'Sisa Potongan bahan diberikan kepada mekanik untuk setting mesin',
     notes: 'Kain sample TC Twill & Interlining telah disiapkan PPIC 100%.',
     picName: ''
@@ -208,9 +208,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'SPV Sewing',
     assignedRole: 'PRODUCTION',
     status: 'Completed',
-    dateScheduled: '2026-09-06',
-    actualDate: '2026-09-07',
-    dateCompleted: '2026-09-07',
+    dateScheduled: '2026-09-08', // H-7 dari Mulai Sewing
+    actualDate: '2026-09-09',
+    dateCompleted: '2026-09-09',
     outputDescription: 'Output: Catatan perbaikan terkait cutting dan pola',
     notes: 'Pola kerah perlu ditambah 0.3 cm untuk toleransi susut jahitan.',
     picName: ''
@@ -221,9 +221,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Chief Mekanik',
     assignedRole: 'PE',
     status: 'Completed',
-    dateScheduled: '2026-09-08',
-    actualDate: '2026-09-08',
-    dateCompleted: '2026-09-08',
+    dateScheduled: '2026-09-10', // H-5 dari Mulai Sewing
+    actualDate: '2026-09-10',
+    dateCompleted: '2026-09-10',
     outputDescription: 'Output: Catatan kebutuhan dan setting mesin spesial sebelum mass production',
     notes: 'Folder saku bobok dan attachment pasang zipper terkalibrasi presisi.',
     machineBreakdownNotes: 'Attachment folder bibir saku siap di Line 3',
@@ -235,9 +235,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'SPV Cutting & Marker',
     assignedRole: 'PRODUCTION',
     status: 'Completed',
-    dateScheduled: '2026-09-09',
-    actualDate: '2026-09-09',
-    dateCompleted: '2026-09-09',
+    dateScheduled: '2026-09-10', // H-5 dari Mulai Sewing
+    actualDate: '2026-09-10',
+    dateCompleted: '2026-09-10',
     outputDescription: 'Bahan sample diambil dari produksi dan menjadi output produksi',
     notes: 'Marker efisiensi 86.4% untuk 5 pcs pilot.',
     picName: ''
@@ -248,7 +248,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Technical Sewing',
     assignedRole: 'PE',
     status: 'Completed',
-    dateScheduled: '2026-09-10',
+    dateScheduled: '2026-09-10', // H-5 dari Mulai Sewing
     actualDate: '2026-09-11',
     dateCompleted: '2026-09-11',
     outputDescription: 'Output: Catatan kesulitan proses',
@@ -261,7 +261,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'PE & Technical',
     assignedRole: 'PE',
     status: 'Completed',
-    dateScheduled: '2026-09-11',
+    dateScheduled: '2026-09-10', // H-5 dari Mulai Sewing
     actualDate: '2026-09-11',
     dateCompleted: '2026-09-11',
     outputDescription: 'Review pilot sample, bedah critical point bersama QC & Line Leader',
@@ -274,7 +274,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'PPIC & Factory Manager',
     assignedRole: 'PPIC',
     status: 'Completed',
-    dateScheduled: '2026-09-12',
+    dateScheduled: '2026-09-12', // H-3 dari Mulai Sewing
     actualDate: '2026-09-12',
     dateCompleted: '2026-09-12',
     outputDescription: 'Rapat koordinasi lintas departemen: target output 600 pcs/hari',
@@ -287,9 +287,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Leader Marker',
     assignedRole: 'PRODUCTION',
     status: 'Completed',
-    dateScheduled: '2026-09-12',
-    actualDate: '2026-09-13',
-    dateCompleted: '2026-09-13',
+    dateScheduled: '2026-09-12', // H-3 dari Mulai Sewing
+    actualDate: '2026-09-12',
+    dateCompleted: '2026-09-12',
     outputDescription: 'Perhitungan yardage gelaran & rasio marker S, M, L, XL',
     notes: 'Marker length 7.2 meter, total gelaran 42 ply.',
     picName: ''
@@ -300,9 +300,9 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Kepala Gudang (Warehouse)',
     assignedRole: 'WAREHOUSE',
     status: 'Completed',
-    dateScheduled: '2026-09-13',
-    actualDate: '2026-09-13',
-    dateCompleted: '2026-09-13',
+    dateScheduled: '2026-09-12', // H-3 dari Mulai Sewing
+    actualDate: '2026-09-12',
+    dateCompleted: '2026-09-12',
     outputDescription: 'Pengiriman 30 roll kain utama dari gudang ke ruang cutting',
     notes: 'Surat jalan WH/OUT/2026/09/112 telah tervalidasi PIC Gudang.',
     picName: ''
@@ -313,7 +313,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Leader Cutting',
     assignedRole: 'PRODUCTION',
     status: 'In Progress',
-    dateScheduled: '2026-09-14',
+    dateScheduled: '2026-09-12', // H-3 dari Mulai Sewing
     actualDate: '2026-09-14',
     outputDescription: 'Spreading fabric resting 24 jam & pemotongan mesin bandknife',
     notes: 'Resting kain selesai, saat ini proses potong batch 1 (1.200 pcs).',
@@ -325,7 +325,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Kepala Gudang (Warehouse)',
     assignedRole: 'WAREHOUSE',
     status: 'In Progress',
-    dateScheduled: '2026-09-14',
+    dateScheduled: '2026-09-14', // H-1 dari Mulai Sewing
     actualDate: '2026-09-14',
     outputDescription: 'Penyerahan benang, zipper YKK, kancing, interlining ke sewing floor',
     notes: 'Sebagian benang warna navy masih di bawah safety stock.',
@@ -337,7 +337,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Leader Cutting',
     assignedRole: 'PRODUCTION',
     status: 'Pending',
-    dateScheduled: '2026-09-15',
+    dateScheduled: '2026-09-14', // H-1 dari Mulai Sewing
     actualDate: '',
     outputDescription: 'Bundling & numbering potongan panel, siap di-load ke Sewing Line 1 & 2',
     notes: 'Menunggu hasil final potongan lot B.',
@@ -349,7 +349,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'SPV Sewing & PE',
     assignedRole: 'PRODUCTION',
     status: 'Pending',
-    dateScheduled: '2026-09-22',
+    dateScheduled: '2026-09-15', // H-0 (Tanggal Mulai Sewing Assembly Line)
     outputDescription: 'Proses perakitan garmen, target efisiensi line 78%',
     notes: 'SMV target: 14.5 menit per garmen.',
     picName: ''
@@ -360,7 +360,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'Admin Subkon & PPIC',
     assignedRole: 'SUBCON',
     status: 'Pending',
-    dateScheduled: '2026-09-24',
+    dateScheduled: '2026-09-17',
     outputDescription: 'Kirim panel badan depan & lengan ke CV Prima Bordir',
     notes: 'Kapasitas subkon 500 pcs/hari.',
     picName: ''
@@ -371,7 +371,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'SPV QC & Finishing',
     assignedRole: 'PRODUCTION',
     status: 'Pending',
-    dateScheduled: '2026-09-27',
+    dateScheduled: '2026-09-25',
     outputDescription: 'Pemeriksaan 100%, buang benang, steam ironing & metal detector',
     notes: 'AQL standard 1.5.',
     picName: ''
@@ -396,7 +396,7 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     name: 'Executive Safari Jacket Navy',
     buyer: 'PT Mitra Megah Garment Corp',
     targetQuantityPcs: 3500,
-    startDate: '2026-09-01',
+    startDate: '2026-09-15', // Tanggal Mulai = Tanggal Sewing Assembly Line (H-0)
     deliveryDate: '2026-09-30',
     status: 'Cutting',
     currentWorkflowStep: 12,
@@ -413,19 +413,31 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     name: 'Sport Pique Polo Shirt Black/White',
     buyer: 'Global Sportswear Retail',
     targetQuantityPcs: 5000,
-    startDate: '2026-09-08',
+    startDate: '2026-09-16', // Tanggal Mulai Sewing Assembly Line (H-0)
     deliveryDate: '2026-10-10',
     status: 'Preparation',
     currentWorkflowStep: 6,
     steps: STANDARD_SOP_STEPS.map(s => {
+      // H-7 = 2026-09-09, H-5 = 2026-09-11, H-3 = 2026-09-13, H-1 = 2026-09-15, H-0 (Sewing) = 2026-09-16
+      const poloDates: Record<number, string> = {
+        1: '2026-09-09', 2: '2026-09-09', 3: '2026-09-09', 4: '2026-09-09', // H-7
+        5: '2026-09-11', 6: '2026-09-11', 7: '2026-09-11', 8: '2026-09-11', // H-5
+        9: '2026-09-13', 10: '2026-09-13', 11: '2026-09-13', 12: '2026-09-13', // H-3
+        13: '2026-09-15', 14: '2026-09-15', // H-1
+        15: '2026-09-16', // H-0 Sewing Assembly Line
+        16: '2026-09-18',
+        17: '2026-10-03',
+        18: '2026-10-08'
+      };
+      const sched = poloDates[s.id] || '2026-09-16';
       if (s.id <= 4) {
-        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-09', actualDate: '2026-09-09', picName: '' };
+        return { ...s, status: 'Completed' as const, dateScheduled: sched, actualDate: '2026-09-09', picName: '' };
       }
       if (s.id === 5) {
         return {
           ...s,
           status: 'Needs Review' as const,
-          dateScheduled: '2026-09-10',
+          dateScheduled: sched,
           actualDate: '2026-09-13',
           notes: 'PERHATIAN SOP: Folder placket polo shirt belum presisi (selisih 2mm), mekanik wajib kalibrasi ulang sebelum Pilot Sample!',
           machineBreakdownNotes: 'Mesin kansai placket Line 2 jarum loncat, sedang diservis mekanik.',
@@ -436,7 +448,7 @@ export const INITIAL_STYLES: ProductionStyle[] = [
         return {
           ...s,
           status: 'In Progress' as const,
-          dateScheduled: '2026-09-11',
+          dateScheduled: sched,
           actualDate: '2026-09-14',
           notes: 'Terlambat 3 hari dari jadwal SOP: Potongan 5 pcs pilot sample menunggu approval koreksi pola placket.',
           picName: ''
@@ -446,34 +458,16 @@ export const INITIAL_STYLES: ProductionStyle[] = [
         return {
           ...s,
           status: 'Pending' as const,
-          dateScheduled: '2026-09-13',
+          dateScheduled: sched,
           actualDate: '',
           notes: 'PPM (Pre-Production Meeting) belum terlaksana padahal jadwal masuk antrian cutting sudah dekat.',
-          picName: ''
-        };
-      }
-      if (s.id < 15) {
-        return {
-          ...s,
-          status: 'Pending' as const,
-          dateScheduled: s.id <= 8 ? '2026-09-12' : (s.id <= 11 ? '2026-09-15' : (s.id <= 13 ? '2026-09-16' : '2026-09-18')),
-          actualDate: '',
-          picName: ''
-        };
-      }
-      if (s.id === 15) {
-        return {
-          ...s,
-          status: 'Pending' as const,
-          dateScheduled: '2026-09-25',
-          actualDate: '',
           picName: ''
         };
       }
       return {
         ...s,
         status: 'Pending' as const,
-        dateScheduled: s.id === 16 ? '2026-09-28' : (s.id === 17 ? '2026-10-03' : '2026-10-08'),
+        dateScheduled: sched,
         actualDate: '',
         picName: ''
       };
@@ -490,29 +484,20 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     name: 'Tactical Cargo Pants Ripstop Khaki',
     buyer: 'Eiger Outdoor Apparel Ltd',
     targetQuantityPcs: 2800,
-    startDate: '2026-08-20',
+    startDate: '2026-09-04', // Tanggal Mulai Sewing Assembly Line (H-0)
     deliveryDate: '2026-09-25',
     status: 'Sewing',
     currentWorkflowStep: 15,
     steps: STANDARD_SOP_STEPS.map(s => {
+      // H-7 = 2026-08-28, H-5 = 2026-08-30, H-3 = 2026-09-01, H-1 = 2026-09-03, H-0 (Sewing) = 2026-09-04
       const cargoDates: Record<number, string> = {
-        1: '2026-08-20',
-        2: '2026-08-21',
-        3: '2026-08-22',
-        4: '2026-08-24',
-        5: '2026-08-26',
-        6: '2026-08-27',
-        7: '2026-08-29',
-        8: '2026-08-31',
-        9: '2026-09-01',
-        10: '2026-09-02',
-        11: '2026-09-04',
-        12: '2026-09-05',
-        13: '2026-09-07',
-        14: '2026-09-08',
-        15: '2026-09-15',
-        16: '2026-09-18',
-        17: '2026-09-21',
+        1: '2026-08-28', 2: '2026-08-28', 3: '2026-08-28', 4: '2026-08-28', // H-7
+        5: '2026-08-30', 6: '2026-08-30', 7: '2026-08-30', 8: '2026-08-30', // H-5
+        9: '2026-09-01', 10: '2026-09-01', 11: '2026-09-01', 12: '2026-09-01', // H-3
+        13: '2026-09-03', 14: '2026-09-03', // H-1
+        15: '2026-09-04', // H-0 Sewing Assembly Line
+        16: '2026-09-07',
+        17: '2026-09-18',
         18: '2026-09-24'
       };
       const sched = cargoDates[s.id] || s.dateScheduled;
@@ -536,19 +521,31 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     name: 'Modern Batik Silk Work Shirt',
     buyer: 'Bank Mandiri Corporate Uniform',
     targetQuantityPcs: 1200,
-    startDate: '2026-09-12',
+    startDate: '2026-09-17', // Tanggal Mulai Sewing Assembly Line (H-0)
     deliveryDate: '2026-10-20',
     status: 'Sample / PPS',
     currentWorkflowStep: 4,
     steps: STANDARD_SOP_STEPS.map(s => {
+      // H-7 = 2026-09-10, H-5 = 2026-09-12, H-3 = 2026-09-14, H-1 = 2026-09-16, H-0 (Sewing) = 2026-09-17
+      const batikDates: Record<number, string> = {
+        1: '2026-09-10', 2: '2026-09-10', 3: '2026-09-10', 4: '2026-09-10', // H-7
+        5: '2026-09-12', 6: '2026-09-12', 7: '2026-09-12', 8: '2026-09-12', // H-5
+        9: '2026-09-14', 10: '2026-09-14', 11: '2026-09-14', 12: '2026-09-14', // H-3
+        13: '2026-09-16', 14: '2026-09-16', // H-1
+        15: '2026-09-17', // H-0 Sewing Assembly Line
+        16: '2026-09-20',
+        17: '2026-10-10',
+        18: '2026-10-18'
+      };
+      const sched = batikDates[s.id] || '2026-09-17';
       if (s.id <= 2) {
-        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-10', actualDate: '2026-09-10', picName: '' };
+        return { ...s, status: 'Completed' as const, dateScheduled: sched, actualDate: '2026-09-10', picName: '' };
       }
       if (s.id === 3) {
         return {
           ...s,
           status: 'Needs Review' as const,
-          dateScheduled: '2026-09-11',
+          dateScheduled: sched,
           actualDate: '2026-09-14',
           notes: 'PERHATIAN SOP: Material kain batik motif parang korporat belum lolos uji luntur (color fastness) di lab QC!',
           picName: ''
@@ -558,34 +555,16 @@ export const INITIAL_STYLES: ProductionStyle[] = [
         return {
           ...s,
           status: 'In Progress' as const,
-          dateScheduled: '2026-09-12',
+          dateScheduled: sched,
           actualDate: '',
           notes: 'PPS tertunda 2 hari karena matching motif saku depan belum simetris sesuai SOP.',
-          picName: ''
-        };
-      }
-      if (s.id < 15) {
-        return {
-          ...s,
-          status: 'Pending' as const,
-          dateScheduled: s.id <= 7 ? '2026-09-15' : (s.id <= 10 ? '2026-09-18' : (s.id <= 12 ? '2026-09-21' : '2026-09-25')),
-          actualDate: '',
-          picName: ''
-        };
-      }
-      if (s.id === 15) {
-        return {
-          ...s,
-          status: 'Pending' as const,
-          dateScheduled: '2026-10-02',
-          actualDate: '',
           picName: ''
         };
       }
       return {
         ...s,
         status: 'Pending' as const,
-        dateScheduled: s.id === 16 ? '2026-10-06' : (s.id === 17 ? '2026-10-12' : '2026-10-18'),
+        dateScheduled: sched,
         actualDate: '',
         picName: ''
       };

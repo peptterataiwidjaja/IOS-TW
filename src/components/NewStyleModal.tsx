@@ -101,7 +101,7 @@ export const NewStyleModal: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Tanggal Mulai Produksi (Start Date) *
+                  Tanggal Mulai Sewing Assembly Line (H-0) *
                 </label>
                 <input
                   type="date"
@@ -110,6 +110,9 @@ export const NewStyleModal: React.FC = () => {
                   onChange={(e) => setStartDate(e.target.value)}
                   className="w-full text-xs p-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 font-medium text-slate-800"
                 />
+                <div className="text-[10px] text-blue-700 font-medium mt-1">
+                  Otomatis atur H-7 (Tahap 1–4), H-5 (5–8), H-3 (9–12), H-1 (13–14)
+                </div>
               </div>
 
               <div>
