@@ -920,36 +920,36 @@ export const PEWorkflowTracker: React.FC = () => {
           <div className="grid grid-cols-4 gap-4 text-center text-[9.5px]">
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Disiapkan Oleh:</div>
-              <div className="text-[8.5px] text-slate-500">Jabatan</div>
+              <div className="text-[8.5px] text-slate-500">Production Engineer (PE)</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">Production Engineer (PE)</span>
+                <span className="font-bold text-slate-900">( .................................... )</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>
 
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Diverifikasi Oleh:</div>
-              <div className="text-[8.5px] text-slate-500">Jabatan</div>
+              <div className="text-[8.5px] text-slate-500">PPIC &amp; Merchandiser</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">PPIC &amp; Merchandiser</span>
+                <span className="font-bold text-slate-900">( .................................... )</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>
 
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Disetujui Oleh:</div>
-              <div className="text-[8.5px] text-slate-500">Jabatan</div>
+              <div className="text-[8.5px] text-slate-500">Factory Manager</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">Factory Manager</span>
+                <span className="font-bold text-slate-900">( .................................... )</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>
 
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Diterima &amp; Dilaksanakan:</div>
-              <div className="text-[8.5px] text-slate-500">Jabatan</div>
+              <div className="text-[8.5px] text-slate-500">SPV Cutting / Sewing Line</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">SPV Cutting / Sewing Line</span>
+                <span className="font-bold text-slate-900">( .................................... )</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>

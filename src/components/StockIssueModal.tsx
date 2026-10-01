@@ -268,15 +268,15 @@ export const StockIssueModal: React.FC<StockIssueModalProps> = ({
           <div class="signatures">
             <div>
               <div style="font-size: 9pt; color: #64748b;">Diserahkan Oleh:</div>
-              <div class="sign-box">${slip.picGudang}<br><span style="font-size: 8pt; font-weight: normal;">(Petugas Gudang)</span></div>
+              <div class="sign-box">( ........................................ )<br><span style="font-size: 8pt; font-weight: normal;">(Petugas Gudang)</span></div>
             </div>
             <div>
               <div style="font-size: 9pt; color: #64748b;">Diterima Oleh (PIC):</div>
-              <div class="sign-box">${slip.picReceiver}<br><span style="font-size: 8pt; font-weight: normal;">(Departemen ${slip.destinationDept})</span></div>
+              <div class="sign-box">( ........................................ )<br><span style="font-size: 8pt; font-weight: normal;">(Departemen ${slip.destinationDept})</span></div>
             </div>
             <div>
               <div style="font-size: 9pt; color: #64748b;">Mengetahui &amp; Otorisasi:</div>
-              <div class="sign-box">${currentUser.role === 'PE' ? currentUser.name : 'Production Engineer / PPIC'}<br><span style="font-size: 8pt; font-weight: normal;">(PE / PPIC)</span></div>
+              <div class="sign-box">( ........................................ )<br><span style="font-size: 8pt; font-weight: normal;">(PE / PPIC)</span></div>
             </div>
           </div>
         </body>

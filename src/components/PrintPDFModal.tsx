@@ -351,8 +351,8 @@ export const PrintPDFModal: React.FC<PrintPDFModalProps> = ({ isOpen, onClose })
                 <span className="text-black font-medium">{currentStyle.buyer}</span>
               </div>
               <div>
-                <span className="block font-bold text-black">Operator PIC:</span>
-                <span className="text-black font-medium">{currentUser.name} ({currentUser.role})</span>
+                <span className="block font-bold text-black">Jabatan PIC:</span>
+                <span className="text-black font-medium">{currentUser.role} ({currentUser.department})</span>
               </div>
             </div>
 
@@ -791,40 +791,40 @@ export const PrintPDFModal: React.FC<PrintPDFModalProps> = ({ isOpen, onClose })
               </div>
             )}
 
-            {/* SIGNATURE / APPROVAL BLOCK (STANDAR PABRIK GARMENT) */}
+            {/* SIGNATURE / APPROVAL BLOCK (NAMA SEMUA TTD DIKOSONGKAN) */}
             <div className="mt-8 pt-4 border-t border-black avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
               <div className="grid grid-cols-3 gap-4 text-center text-[10px]">
                 
                 {/* 1. Pembuat Dokumen */}
-                <div className="space-y-12">
+                <div className="space-y-14">
                   <div className="font-bold uppercase text-black">
-                    Disiapkan Oleh (PIC Pelaksana):
+                    Disiapkan Oleh:
                   </div>
                   <div>
-                    <div className="font-bold underline text-black">{currentUser.name}</div>
-                    <div className="text-[9px] text-black">Jabatan: {currentUser.role} - {currentUser.department.split('&')[0]}</div>
+                    <div className="font-bold text-black">( .................................................... )</div>
+                    <div className="text-[9px] text-black mt-0.5">Jabatan: {currentUser.role}</div>
                   </div>
                 </div>
 
                 {/* 2. Diperiksa PE */}
-                <div className="space-y-12">
+                <div className="space-y-14">
                   <div className="font-bold uppercase text-black">
-                    Diperiksa Oleh (Production Engineer):
+                    Diperiksa Oleh:
                   </div>
                   <div>
-                    <div className="font-bold underline text-black">Hendra Gunawan, S.T.</div>
-                    <div className="text-[9px] text-black">Lead Production Engineer (PE)</div>
+                    <div className="font-bold text-black">( .................................................... )</div>
+                    <div className="text-[9px] text-black mt-0.5">Jabatan: Production Engineer (PE)</div>
                   </div>
                 </div>
 
                 {/* 3. Disetujui Pimpinan / FM */}
-                <div className="space-y-12">
+                <div className="space-y-14">
                   <div className="font-bold uppercase text-black">
-                    Disetujui Oleh (Factory Manager / PPIC):
+                    Disetujui Oleh:
                   </div>
                   <div>
-                    <div className="font-bold underline text-black">Ir. Bambang Sugiarto</div>
-                    <div className="text-[9px] text-black">Factory General Manager</div>
+                    <div className="font-bold text-black">( .................................................... )</div>
+                    <div className="text-[9px] text-black mt-0.5">Jabatan: Factory Manager / PPIC</div>
                   </div>
                 </div>
 
