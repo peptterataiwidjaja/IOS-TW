@@ -94,6 +94,7 @@ export const UserAccessManagerView: React.FC = () => {
   const [newAllowedTabs, setNewAllowedTabs] = useState<string[]>([
     'pe-workflow',
     'ppic-planning',
+    'cutting',
     'subcon',
     'transactions'
   ]);
@@ -136,15 +137,15 @@ export const UserAccessManagerView: React.FC = () => {
         break;
       case 'FACTORY_MANAGER':
         setNewDepartment('Executive Factory Management');
-        setNewAllowedTabs(['new-style', 'pe-workflow', 'ppic-planning', 'warehouse-stock', 'subcon', 'transactions', 'spreadsheet', 'analytics']);
+        setNewAllowedTabs(['new-style', 'pe-workflow', 'ppic-planning', 'cutting', 'warehouse-stock', 'subcon', 'transactions', 'spreadsheet', 'analytics']);
         break;
       case 'PPIC':
         setNewDepartment('PPIC & Inventory Control');
-        setNewAllowedTabs(['new-style', 'ppic-planning', 'warehouse-stock', 'transactions', 'spreadsheet', 'analytics']);
+        setNewAllowedTabs(['new-style', 'ppic-planning', 'cutting', 'warehouse-stock', 'transactions', 'spreadsheet', 'analytics']);
         break;
       case 'PRODUCTION':
         setNewDepartment('Produksi Cutting & Sewing Line');
-        setNewAllowedTabs(['pe-workflow', 'ppic-planning', 'subcon', 'transactions', 'spreadsheet']);
+        setNewAllowedTabs(['pe-workflow', 'ppic-planning', 'cutting', 'subcon', 'transactions', 'spreadsheet']);
         break;
       case 'SUBCON':
         setNewDepartment('Mitra Subkon Eksternal');
@@ -365,88 +366,63 @@ export const UserAccessManagerView: React.FC = () => {
     <div className="space-y-5 font-sans">
       
       {/* Top Banner Header */}
-      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2.5 rounded-xl bg-red-600 text-white shrink-0 shadow-xs">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-black tracking-tight">Manajemen Akses Akun &amp; Bar Menu (Khusus PE)</h1>
-              <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">
-                Otoritas PE
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 mt-0.5 max-w-2xl">
-              Tambah atau hapus akun pengguna, ganti nama &amp; user login, serta atur akses bar menu yang tersedia untuk setiap akun.
-            </p>
-          </div>
-        </div>
+      <div className="bg-white rounded-xl p-4 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="text-base font-bold text-slate-900">Pengaturan Akun &amp; Akses Menu</h1>
 
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* SUB-NAVIGATION TABS */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setMainSubTab('pe-permissions')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              mainSubTab === 'pe-permissions'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Kelola Akun (PE)
+          </button>
+
+          <button
+            onClick={() => setMainSubTab('profile')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              mainSubTab === 'profile'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Profil Aktif
+          </button>
+
+          <button
+            onClick={() => setMainSubTab('spreadsheet')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              mainSubTab === 'spreadsheet'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Google Sheet
+          </button>
+
+          <button
+            onClick={() => setMainSubTab('logo')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              mainSubTab === 'logo'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Logo
+          </button>
+
           <button
             onClick={() => openPrintModal('user-access')}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-2 border border-slate-700 transition-all cursor-pointer"
+            className="p-1.5 rounded-md text-slate-600 hover:text-slate-900 cursor-pointer"
+            title="Cetak PDF"
           >
-            <Printer className="w-4 h-4 text-blue-400" />
-            <span>Cetak Matriks Akses</span>
+            <Printer className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
-
-      {/* SUB-NAVIGATION TABS */}
-      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto scrollbar-none bg-white p-1.5 rounded-xl border">
-        <button
-          onClick={() => setMainSubTab('pe-permissions')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            mainSubTab === 'pe-permissions'
-              ? 'bg-red-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <KeyRound className="w-4 h-4" />
-          <span>1. Kelola Akun &amp; Akses Bar (PE)</span>
-        </button>
-
-        <button
-          onClick={() => setMainSubTab('profile')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            mainSubTab === 'profile'
-              ? 'bg-blue-700 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <UserCheck className="w-4 h-4" />
-          <span>2. Profil Aktif &amp; Ganti Akun</span>
-        </button>
-
-        <button
-          onClick={() => setMainSubTab('spreadsheet')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            mainSubTab === 'spreadsheet'
-              ? 'bg-blue-700 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          <span>3. Google Spreadsheet</span>
-          {lastSyncedGas && (
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          )}
-        </button>
-
-        <button
-          onClick={() => setMainSubTab('logo')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            mainSubTab === 'logo'
-              ? 'bg-blue-700 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <ImageIcon className="w-4 h-4" />
-          <span>4. Kustomisasi Logo</span>
-        </button>
       </div>
 
       {/* Notifications Alert Banner */}

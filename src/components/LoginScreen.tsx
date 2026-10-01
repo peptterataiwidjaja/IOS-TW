@@ -61,27 +61,24 @@ export const LoginScreen: React.FC = () => {
             )}
           </div>
 
-          <h1 className="text-lg font-black tracking-tight text-slate-900 uppercase">
+          <h1 className="text-base font-black tracking-tight text-slate-900 uppercase">
             PT TERATAI WIDJAJA
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Sistem Operasional Produksi &amp; Gudang Garmen
-          </p>
         </div>
 
         {/* Form Body: Only User Bar & Password Bar */}
-        <div className="p-8">
+        <div className="p-7">
           {errorMessage && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Bar 1: User */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 User
               </label>
               <div className="relative">
@@ -97,15 +94,15 @@ export const LoginScreen: React.FC = () => {
                     setUsername(e.target.value);
                     if (errorMessage) setErrorMessage('');
                   }}
-                  placeholder="Masukkan User..."
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
+                  placeholder="User..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
             {/* Bar 2: Password */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Password
               </label>
               <div className="relative">
@@ -120,8 +117,8 @@ export const LoginScreen: React.FC = () => {
                     setPassword(e.target.value);
                     if (errorMessage) setErrorMessage('');
                   }}
-                  placeholder="Masukkan Password..."
-                  className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
+                  placeholder="Password..."
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
                 />
                 <button
                   type="button"
@@ -135,14 +132,14 @@ export const LoginScreen: React.FC = () => {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (
-                  <span>Memverifikasi...</span>
+                  <span>Masuk...</span>
                 ) : (
                   <>
                     <span>Masuk</span>
@@ -152,13 +149,6 @@ export const LoginScreen: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
-
-        {/* Subtle Footer */}
-        <div className="px-8 py-3.5 bg-slate-50 border-t border-slate-100 text-center">
-          <p className="text-[11px] text-slate-500">
-            Akses akun &amp; wewenang menu dikelola oleh <strong className="text-slate-700">PE</strong>
-          </p>
         </div>
       </div>
     </div>

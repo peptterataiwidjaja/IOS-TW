@@ -163,145 +163,93 @@ export const WarehouseStockManager: React.FC = () => {
         </div>
       )}
 
-      {/* Compact Header, KPI Summary & Quick Guide */}
-      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs space-y-4">
+      {/* Compact Header, KPI Summary & Filter Bar Unified */}
+      <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-black text-slate-900 tracking-tight">
-              Stok Gudang &amp; Keranjang Pengeluaran Bahan
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-base font-bold text-slate-900">
+              Stok Gudang ({filteredStock.length})
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Cara Ambil Barang: <strong>1. Pilih bahan sesuai style</strong> &rarr; <strong>2. Klik + Keranjang</strong> &rarr; <strong>3. Buka Keranjang &amp; Ajukan</strong>.
-            </p>
+            <div className="flex items-center gap-2 text-xs text-slate-500 tabular-nums">
+              <span>Valuasi: <strong className="text-emerald-700">Rp {totalValue.toLocaleString('id-ID')}</strong></span>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => setOnlyLowStock(!onlyLowStock)}
+                className={`font-bold cursor-pointer ${lowStockCount > 0 ? 'text-rose-600 underline' : 'text-slate-600'}`}
+              >
+                {lowStockCount} Menipis
+              </button>
+            </div>
           </div>
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => openPrintModal('warehouse-stock')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold transition-colors cursor-pointer"
-              title="Cetak PDF Dokumen Fisik Stok Gudang"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-600" />
-              <span>Cetak PDF</span>
-            </button>
-
-            <button
               onClick={() => handleOpenIssueModal(null)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 requisitionCart.length > 0 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white ring-2 ring-blue-300' 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                   : 'bg-slate-900 hover:bg-slate-800 text-white'
               }`}
             >
               <ShoppingCart className="w-3.5 h-3.5" />
-              <span>Keranjang Pengeluaran</span>
-              <span className="px-1.5 py-0.2 rounded bg-white/20 text-white font-mono text-[10px]">
-                {requisitionCart.length}
-              </span>
+              <span>Keranjang ({requisitionCart.length})</span>
             </button>
 
             {canInputStock && (
               <button
                 onClick={() => setIsAddStockModalOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Stok Masuk</span>
+                <span>Stok Masuk</span>
               </button>
             )}
+
+            <button
+              onClick={() => openPrintModal('warehouse-stock')}
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+              title="Cetak PDF"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Compact 4-Column KPI Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 text-xs">
-          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
-            <div>
-              <div className="text-[11px] text-slate-500">Total Katalog</div>
-              <div className="text-base font-black text-slate-900">{totalSku} SKU</div>
-            </div>
-            <Package className="w-4 h-4 text-slate-400" />
-          </div>
-
-          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
-            <div>
-              <div className="text-[11px] text-slate-500">Total Valuasi</div>
-              <div className="text-base font-black text-emerald-700">Rp {totalValue.toLocaleString('id-ID')}</div>
-            </div>
-            <DollarSign className="w-4 h-4 text-emerald-500" />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setOnlyLowStock(!onlyLowStock)}
-            className={`p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors cursor-pointer ${
-              lowStockCount > 0 ? 'bg-rose-50/70 border-rose-200 hover:bg-rose-100/70' : 'bg-slate-50 border-slate-200'
-            }`}
-          >
-            <div>
-              <div className="text-[11px] text-slate-500">Stok Menipis</div>
-              <div className={`text-base font-black ${lowStockCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                {lowStockCount} Item
-              </div>
-            </div>
-            <AlertTriangle className={`w-4 h-4 ${lowStockCount > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedStyleFilter(selectedStyleFilter === currentStyle.code ? 'ALL' : currentStyle.code)}
-            className={`p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors cursor-pointer ${
-              selectedStyleFilter === currentStyle.code ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <div className="min-w-0">
-              <div className="text-[11px] text-slate-500">Filter Style Aktif</div>
-              <div className="text-sm font-black text-blue-700 truncate">{currentStyle.code}</div>
-            </div>
-            <Layers2 className="w-4 h-4 text-blue-500 shrink-0" />
-          </button>
-        </div>
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          
-          {/* Search Box */}
+        {/* Compact Filter Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-2 border-t border-slate-100">
           <div className="sm:col-span-5 relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari kode bahan, nama kain, aksesoris, supplier..."
+              placeholder="Cari bahan / kode..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50 focus:bg-white"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-blue-600"
             />
           </div>
 
-          {/* Style Filter */}
-          <div className="sm:col-span-4 flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-slate-400 shrink-0 hidden sm:block" />
+          <div className="sm:col-span-4">
             <select
               value={selectedStyleFilter}
               onChange={(e) => setSelectedStyleFilter(e.target.value)}
-              className="w-full py-2 px-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full py-1.5 px-2.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-800 bg-white"
             >
-              <option value="ALL">Semua Alokasi Style</option>
+              <option value="ALL">Semua Style</option>
               {styles.map(s => (
                 <option key={s.id} value={s.code}>
-                  Style: {s.code} ({s.name})
+                  {s.code} — {s.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Category Filter */}
           <div className="sm:col-span-3">
             <select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="w-full py-2 px-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full py-1.5 px-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 bg-white"
             >
               <option value="ALL">Semua Kategori</option>
               <option value="Kain Utama (Fabric)">Kain Utama</option>
@@ -314,165 +262,83 @@ export const WarehouseStockManager: React.FC = () => {
               <option value="Polybag & Karton">Packaging</option>
             </select>
           </div>
-
-        </div>
-
-        {/* Quick pill toggle */}
-        <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">Menampilkan: <strong>{filteredStock.length}</strong> item bahan</span>
-            {onlyLowStock && (
-              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
-                Hanya Stok Menipis
-              </span>
-            )}
-          </div>
-
-          <button
-            onClick={() => setOnlyLowStock(!onlyLowStock)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-              onlyLowStock ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Filter Stok &le; Minimum</span>
-          </button>
         </div>
       </div>
 
       {/* Stock Items Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200">
-                <th className="py-3 px-3">Kode &amp; Nama Bahan</th>
-                <th className="py-3 px-3">Kategori</th>
-                <th className="py-3 px-3">Alokasi Style (Group)</th>
-                <th className="py-3 px-3 text-right">Stok Aktual</th>
-                <th className="py-3 px-3 text-right">Batas Min</th>
-                <th className="py-3 px-3 text-center">Status Level</th>
-                <th className="py-3 px-3">Lokasi Rak</th>
-                <th className="py-3 px-3">Supplier</th>
-                <th className="py-3 px-3 text-center">Aksi</th>
+              <tr className="bg-slate-50 text-slate-500 font-semibold text-[11px] border-b border-slate-200">
+                <th className="py-2.5 px-3">Bahan Baku</th>
+                <th className="py-2.5 px-3">Style</th>
+                <th className="py-2.5 px-3 text-right">Stok</th>
+                <th className="py-2.5 px-3 text-right">Min</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3">Rak</th>
+                <th className="py-2.5 px-3 text-center">Ambil</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredStock.map((item) => {
                 const isLow = item.currentStock <= item.minStockLevel;
-                const ratio = item.minStockLevel > 0 ? (item.currentStock / item.minStockLevel) : 2;
+                const inCart = requisitionCart.find(c => c.stockItemId === item.id);
 
                 return (
                   <tr 
                     key={item.id} 
                     className={`hover:bg-slate-50 transition-colors ${
-                      isLow ? 'bg-rose-50/40' : ''
+                      isLow ? 'bg-rose-50/30' : ''
                     }`}
                   >
-                    {/* Code & Name */}
-                    <td className="py-3 px-3">
+                    <td className="py-2.5 px-3">
                       <div className="font-bold text-slate-900">{item.name}</div>
-                      <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
-                        <Tag className="w-3 h-3 text-slate-400" />
-                        {item.code}
+                      <div className="text-[11px] text-slate-400">
+                        <span className="font-mono">{item.code}</span> · {item.category}
                       </div>
                     </td>
 
-                    {/* Category */}
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                        {item.category}
-                      </span>
+                    <td className="py-2.5 px-3 font-mono font-bold text-blue-700">
+                      {item.styleCode}
                     </td>
 
-                    {/* Style Allocation */}
-                    <td className="py-3 px-3">
-                      <div className="font-bold text-indigo-700 flex items-center gap-1">
-                        <Layers2 className="w-3.5 h-3.5 text-indigo-500" />
-                        {item.styleCode}
-                      </div>
-                      <div className="text-[10px] text-slate-500 truncate max-w-[140px]">
-                        {item.styleName}
-                      </div>
-                    </td>
-
-                    {/* Current Stock */}
-                    <td className="py-3 px-3 text-right">
-                      <div className={`text-sm font-black ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
+                    <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">
+                      <span className={`font-bold ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
                         {item.currentStock.toLocaleString()}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-medium">{item.unit}</div>
+                      </span>{' '}
+                      <span className="text-slate-400 text-[11px]">{item.unit}</span>
                     </td>
 
-                    {/* Min Stock Level */}
-                    <td className="py-3 px-3 text-right text-slate-600 font-medium">
-                      <div>{item.minStockLevel.toLocaleString()}</div>
-                      <div className="text-[10px] text-slate-400">{item.unit}</div>
+                    <td className="py-2.5 px-3 text-right text-slate-500 tabular-nums whitespace-nowrap">
+                      {item.minStockLevel.toLocaleString()}
                     </td>
 
-                    {/* Status Badge */}
-                    <td className="py-3 px-3 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       {isLow ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 animate-pulse">
-                          <AlertTriangle className="w-3 h-3 text-rose-600" />
-                          Menipis!
-                        </span>
-                      ) : ratio <= 1.3 ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                          <AlertCircle className="w-3 h-3 text-amber-600" />
-                          Waspada
-                        </span>
+                        <span className="font-bold text-rose-600">Menipis</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Aman
-                        </span>
+                        <span className="font-semibold text-emerald-600">Aman</span>
                       )}
                     </td>
 
-                    {/* Rack */}
-                    <td className="py-3 px-3 text-slate-700">
-                      <div className="flex items-center gap-1 text-[11px]">
-                        <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span>{item.rackLocation}</span>
-                      </div>
+                    <td className="py-2.5 px-3 text-slate-600 text-[11px]">
+                      {item.rackLocation}
                     </td>
 
-                    {/* Supplier */}
-                    <td className="py-3 px-3 text-slate-600 text-[11px]">
-                      <div className="truncate max-w-[130px]" title={item.supplier}>
-                        {item.supplier}
-                      </div>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3 px-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                        {(() => {
-                          const inCart = requisitionCart.find(c => c.stockItemId === item.id);
-                          return inCart ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-bold border border-blue-200">
-                              ✓ {inCart.quantityToIssue} {item.unit}
-                            </span>
-                          ) : null;
-                        })()}
-
+                    <td className="py-2.5 px-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {inCart && (
+                          <span className="text-[11px] font-bold text-blue-700 tabular-nums">
+                            ✓ {inCart.quantityToIssue}
+                          </span>
+                        )}
                         <button
                           onClick={() => handleQuickAddToCart(item)}
                           disabled={item.currentStock <= 0}
-                          className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 disabled:bg-slate-100 text-blue-700 disabled:text-slate-400 font-bold text-[11px] border border-blue-200 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Tambah ke Keranjang Pengeluaran"
+                          className="px-2.5 py-1 rounded-md bg-blue-50 hover:bg-blue-100 disabled:bg-slate-100 text-blue-700 disabled:text-slate-400 font-semibold text-xs cursor-pointer"
                         >
-                          <Plus className="w-3 h-3" />
-                          <span>+ Keranjang</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleOpenIssueModal(item)}
-                          className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] border border-slate-200 transition-colors cursor-pointer"
-                          title="Buka Keranjang & Form Pengeluaran"
-                        >
-                          <ShoppingCart className="w-3.5 h-3.5" />
+                          + Keranjang
                         </button>
                       </div>
                     </td>
@@ -483,10 +349,9 @@ export const WarehouseStockManager: React.FC = () => {
           </table>
         </div>
 
-        {/* Empty state */}
         {filteredStock.length === 0 && (
-          <div className="py-12 text-center text-slate-500 text-xs">
-            Tidak ada item bahan yang sesuai filter pencarian.
+          <div className="py-10 text-center text-slate-400 text-xs">
+            Tidak ada bahan baku.
           </div>
         )}
       </div>

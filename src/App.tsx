@@ -16,6 +16,7 @@ import { PEWorkflowTracker } from './components/PEWorkflowTracker';
 import { NewStyleInputView } from './components/NewStyleInputView';
 import { WarehouseStockManager } from './components/WarehouseStockManager';
 import { PPICPlanningView } from './components/PPICPlanningView';
+import { CuttingManagementView } from './components/CuttingManagementView';
 import { TransactionHistoryView } from './components/TransactionHistoryView';
 import { SpreadsheetView } from './components/SpreadsheetView';
 import { SubcontractorManager } from './components/SubcontractorManager';
@@ -90,6 +91,8 @@ const MainLayout: React.FC = () => {
         return <WarehouseStockManager />;
       case 'ppic-planning':
         return <PPICPlanningView />;
+      case 'cutting':
+        return <CuttingManagementView />;
       case 'transactions':
         return <TransactionHistoryView />;
       case 'subcon':

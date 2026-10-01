@@ -423,120 +423,79 @@ export const PEWorkflowTracker: React.FC = () => {
 
       {/* ======================================================== */}
       {/* SCREEN-ONLY: COMPACT UNIFIED HEADER, FILTERS & PROGRESS */}
-      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs print:hidden space-y-4">
+      <div className="bg-white rounded-xl p-4 border border-slate-200 print:hidden space-y-3">
         
         {/* Top Row: Title, Summary Metrics & Actions */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
-          <div>
-            <h1 className="text-lg font-black text-slate-900 tracking-tight">
-              Alur Kerja 14 Tahap SOP &amp; Tracking Tanggal Aktual
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Pilih model pakaian, pantau tahapan persiapan produksi, dan isi tanggal realisasi aktual.
-            </p>
-          </div>
-
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-base font-bold text-slate-900">
+              Alur SOP Produksi
+            </h1>
             {activeStyle && (
-              <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
-                <div>
-                  <span className="text-slate-500">Order: </span>
-                  <strong className="text-slate-900">{activeStyle.targetQuantityPcs.toLocaleString()} Pcs</strong>
-                </div>
+              <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-xs tabular-nums">
+                <strong className="text-slate-900">{activeStyle.targetQuantityPcs.toLocaleString()} Pcs</strong>
                 <span className="text-slate-300">·</span>
-                <div>
-                  <span className="text-slate-500">Selesai: </span>
-                  <strong className="text-blue-700">{completedCount}/{activeStyle.steps.length} Tahap</strong>
-                </div>
+                <strong className="text-blue-700">{completedCount}/{activeStyle.steps.length} SOP</strong>
                 <span className="text-slate-300">·</span>
-                <strong className="text-emerald-700">{progressPercent}% Siap</strong>
+                <strong className="text-emerald-700">{progressPercent}%</strong>
               </div>
             )}
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('new-style')}
-              className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              + Input Model Baru
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-amber-400" />
-              <span>Cetak PDF</span>
-            </button>
           </div>
-        </div>
 
-        {/* Middle Row: Compact 3-Column Filter (Bulan, Tahun, Model Style) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-3">
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">Filter Bulan</label>
+          <div className="flex items-center gap-2 flex-wrap">
             <select
               value={selectedMonth}
               onChange={(e) => handlePeriodChange(selectedYear, e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white cursor-pointer"
             >
               <option value="ALL">Semua Bulan</option>
               {MONTH_NAMES.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label} ({m.value})
-                </option>
+                <option key={m.value} value={m.value}>{m.label}</option>
               ))}
             </select>
-          </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">Filter Tahun</label>
             <select
               value={selectedYear}
               onChange={(e) => handlePeriodChange(e.target.value, selectedMonth)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white cursor-pointer"
             >
               <option value="ALL">Semua Tahun</option>
               {availableYears.map((y) => (
-                <option key={y} value={String(y)}>
-                  Tahun {y}
-                </option>
+                <option key={y} value={String(y)}>{y}</option>
               ))}
             </select>
-          </div>
 
-          <div className="md:col-span-6">
-            <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center justify-between">
-              <span>Model / Style Garment</span>
-              <span className="text-[10px] text-slate-400">{stylesInSelectedPeriod.length} style tersedia</span>
-            </label>
             <select
               value={activeStyle ? activeStyle.id : ''}
               onChange={(e) => setSelectedStyleId(e.target.value)}
               disabled={stylesInSelectedPeriod.length === 0}
-              className={`w-full px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                stylesInSelectedPeriod.length === 0
-                  ? 'border-dashed border-amber-300 bg-amber-50 text-amber-900 cursor-not-allowed'
-                  : 'border-blue-400 bg-blue-50/30 text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer'
-              }`}
+              className="px-2.5 py-1.5 rounded-lg border border-blue-300 bg-blue-50/40 text-xs font-bold text-blue-950 max-w-[220px] truncate cursor-pointer"
             >
               {stylesInSelectedPeriod.length === 0 ? (
-                <option value="">(Tidak ada model pada periode {periodLabel})</option>
+                <option value="">Kosong ({periodLabel})</option>
               ) : (
                 stylesInSelectedPeriod.map((style) => (
                   <option key={style.id} value={style.id}>
-                    {style.code} — {style.name} (Buyer: {style.buyer} · Delivery: {style.deliveryDate})
+                    {style.code} — {style.name}
                   </option>
                 ))
               )}
             </select>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white cursor-pointer"
+              title="Cetak PDF"
+            >
+              <Printer className="w-4 h-4 text-amber-400" />
+            </button>
           </div>
         </div>
 
         {/* Bottom Row: Department Segmented Filter & Active Style Metadata */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg overflow-x-auto">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg overflow-x-auto w-fit">
             {['ALL', 'PE', 'PPIC', 'WAREHOUSE', 'PRODUCTION'].map((dept) => (
               <button
                 key={dept}
@@ -547,16 +506,14 @@ export const PEWorkflowTracker: React.FC = () => {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {dept === 'ALL' ? 'Semua Tahap' : dept}
+                {dept === 'ALL' ? 'Semua' : dept}
               </button>
             ))}
           </div>
 
           {activeStyle ? (
-            <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
-              <span>Buyer: <strong className="text-slate-900">{activeStyle.buyer}</strong></span>
-              <span>·</span>
-              <span>Mulai: <strong className="text-slate-900">{activeStyle.startDate}</strong></span>
+            <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap tabular-nums">
+              <span>Buyer: <strong className="text-slate-800">{activeStyle.buyer}</strong></span>
               <span>·</span>
               <span>Delivery: <strong className="text-red-600">{activeStyle.deliveryDate}</strong></span>
             </div>
@@ -565,7 +522,7 @@ export const PEWorkflowTracker: React.FC = () => {
               onClick={handleResetPeriod}
               className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
             >
-              Reset Filter Periode &rarr;
+              Reset Filter &rarr;
             </button>
           )}
         </div>
@@ -605,13 +562,9 @@ export const PEWorkflowTracker: React.FC = () => {
       {/* Main SOP Workflow Table with Actual Date Column */}
       {activeStyle && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden print:border print:border-slate-800 print:rounded-none">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between print:bg-white print:p-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-              <ClipboardCheck className="w-4 h-4 text-blue-700 print:text-black" />
-              <span>Matriks 14+ Tahap SOP Produksi Garment (Teratai Widjaja Standard)</span>
-            </div>
-            <span className="text-[11px] text-slate-500 print:hidden">
-              * Kolom <strong className="text-blue-700 font-bold">Tanggal Aktual</strong> dapat diisi langsung untuk perbandingan deviasi jadwal
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between print:bg-white print:p-2">
+            <span className="text-xs font-bold text-slate-800">
+              Daftar 14 Tahap SOP ({activeStyle.code})
             </span>
           </div>
 
@@ -670,25 +623,20 @@ export const PEWorkflowTracker: React.FC = () => {
 
                     {/* Process Name */}
                     <td className="py-3 px-4 print:py-1.5 print:px-2 print:border print:border-slate-300">
-                      <div className="font-extrabold text-slate-900 leading-snug">
+                      <div className="font-bold text-slate-900 leading-snug">
                         {step.process}
                       </div>
                       <div className="hidden print:block text-[8.5px] text-slate-600 font-medium mt-0.5">
                         PIC: {step.picDept} {step.picName ? `• ${step.picName}` : ''}
                       </div>
-                      {step.isMandatory && (
-                        <span className="inline-block mt-0.5 text-[9px] px-1.5 py-0.2 rounded bg-red-50 text-red-600 font-bold border border-red-200 print:border-slate-400 print:text-black">
-                          Mandatory SOP
-                        </span>
-                      )}
                     </td>
 
                     {/* PIC / Dept (Screen only) */}
                     <td className="py-3 px-3 print:hidden">
-                      <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                      <div className="text-xs font-semibold text-slate-800">
                         {step.picDept}
-                      </span>
-                      <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                      </div>
+                      <div className="text-[11px] text-slate-400">
                         {step.picName || '-'}
                       </div>
                     </td>

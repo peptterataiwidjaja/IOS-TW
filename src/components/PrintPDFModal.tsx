@@ -616,12 +616,12 @@ export const PrintPDFModal: React.FC<PrintPDFModalProps> = ({ isOpen, onClose })
                         <tr key={t.id} className="border-b border-black">
                           <td className="border-r border-black p-1.5 text-center font-bold">{idx + 1}</td>
                           <td className="border-r border-black p-1.5 font-bold">{t.subconName}</td>
-                          <td className="border-r border-black p-1.5">{t.taskName}</td>
+                          <td className="border-r border-black p-1.5">{t.type}</td>
                           <td className="border-r border-black p-1.5 font-mono">{t.styleCode}</td>
-                          <td className="border-r border-black p-1.5 text-right font-mono">{t.quantitySend.toLocaleString()}</td>
-                          <td className="border-r border-black p-1.5 text-right font-mono">{t.quantityReceived.toLocaleString()}</td>
-                          <td className="border-r border-black p-1.5 text-right font-mono font-bold">{diff.toLocaleString()}</td>
-                          <td className="border-r border-black p-1.5 text-center font-mono">{t.targetReturnDate}</td>
+                          <td className="border-r border-black p-1.5 text-right font-mono">{(t.quantitySend ?? 0).toLocaleString()}</td>
+                          <td className="border-r border-black p-1.5 text-right font-mono">{(t.quantityReceived ?? 0).toLocaleString()}</td>
+                          <td className="border-r border-black p-1.5 text-right font-mono font-bold">{(diff ?? 0).toLocaleString()}</td>
+                          <td className="border-r border-black p-1.5 text-center font-mono">{t.estReturnDate}</td>
                           <td className="p-1.5 text-center font-bold">{t.status.toUpperCase()}</td>
                         </tr>
                       );
@@ -658,7 +658,7 @@ export const PrintPDFModal: React.FC<PrintPDFModalProps> = ({ isOpen, onClose })
                         <td className="border-r border-black p-1.5 font-mono">{tx.timestamp}</td>
                         <td className="border-r border-black p-1.5 font-mono font-bold">{tx.referenceDoc}</td>
                         <td className="border-r border-black p-1.5">{tx.styleTarget}</td>
-                        <td className="border-r border-black p-1.5 font-bold">{tx.materialName}</td>
+                        <td className="border-r border-black p-1.5 font-bold">{tx.itemName}</td>
                         <td className="border-r border-black p-1.5 text-right font-mono font-bold">
                           {tx.quantity} {tx.unit}
                         </td>

@@ -16,7 +16,8 @@ import {
   Camera,
   PlusCircle,
   UserCheck,
-  LogOut
+  LogOut,
+  Scissors
 } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 
@@ -29,6 +30,8 @@ export const Navbar: React.FC = () => {
     lowStockItems, 
     pendingCashFlowCount, 
     subconWarnings,
+    cuttingOrders,
+    sopAttentionStyles,
     activeTab, 
     setActiveTab,
     isTabAllowed,
@@ -45,16 +48,32 @@ export const Navbar: React.FC = () => {
 
   const selectedStyle = styles.find(s => s.id === selectedStyleId) || styles[0];
 
+  const activeCutCount = cuttingOrders.filter(c => c.queueStatus === 'ACTIVE_CUTTING').length;
+  const waitingCutCount = cuttingOrders.filter(c => c.queueStatus === 'WAITING_LIST' || c.queueStatus === 'HOLD_SOP').length;
+
   const allNavItems = [
-    { id: 'new-style', label: 'Input Model Baru', icon: PlusCircle },
+    { id: 'new-style', label: 'Model Baru', icon: PlusCircle },
     { id: 'pe-workflow', label: 'Alur SOP', icon: ClipboardCheck },
-    { id: 'ppic-planning', label: 'PPIC & BOM', icon: Layers },
+    { 
+      id: 'ppic-planning', 
+      label: 'PPIC', 
+      icon: Layers,
+      badge: sopAttentionStyles.length > 0 ? `${sopAttentionStyles.length}` : undefined,
+      badgeColor: 'bg-red-600 text-white'
+    },
+    {
+      id: 'cutting',
+      label: 'Cutting',
+      icon: Scissors,
+      badge: `${activeCutCount}/${waitingCutCount}`,
+      badgeColor: 'bg-blue-600 text-white'
+    },
     { 
       id: 'warehouse-stock', 
-      label: 'Stok Gudang', 
+      label: 'Gudang', 
       icon: Warehouse, 
       badge: requisitionCart.length > 0 
-        ? `${requisitionCart.length} Keranjang` 
+        ? `${requisitionCart.length}` 
         : lowStockItems.length > 0 
         ? `${lowStockItems.length}` 
         : undefined,
@@ -62,15 +81,15 @@ export const Navbar: React.FC = () => {
     },
     { 
       id: 'subcon', 
-      label: currentUser.role === 'SUBCON' ? 'Portal Input Harian Subkon' : 'Mitra Subkon', 
+      label: currentUser.role === 'SUBCON' ? 'Input Subkon' : 'Subkon', 
       icon: Truck,
-      badge: currentUser.role !== 'SUBCON' && subconWarnings.length > 0 ? `${subconWarnings.length} Warning H-3` : undefined,
+      badge: currentUser.role !== 'SUBCON' && subconWarnings.length > 0 ? `${subconWarnings.length}` : undefined,
       badgeColor: 'bg-red-600 text-white'
     },
-    { id: 'transactions', label: 'Riwayat Mutasi', icon: FileText },
-    { id: 'spreadsheet', label: 'Spreadsheet', icon: Table2 },
+    { id: 'transactions', label: 'Mutasi', icon: FileText },
+    { id: 'spreadsheet', label: 'Tabel', icon: Table2 },
     { id: 'analytics', label: 'Analitik', icon: BarChart3 },
-    { id: 'user-access', label: 'Akses Akun', icon: ShieldCheck },
+    { id: 'user-access', label: 'Akses', icon: ShieldCheck },
   ];
 
   // Filter navigation items strictly according to user permissions
@@ -137,9 +156,6 @@ export const Navbar: React.FC = () => {
               <div className="text-sm font-black tracking-tight text-slate-900 leading-tight">
                 PT TERATAI WIDJAJA
               </div>
-              <p className="text-[11px] text-slate-500">
-                Sistem Operasional Produksi &amp; Gudang
-              </p>
             </div>
           </div>
 
@@ -215,9 +231,9 @@ export const Navbar: React.FC = () => {
                     title="Notifikasi Warning Subkon H-3 & Stok Gudang"
                   >
                     <Bell className="w-4 h-4 text-slate-600" />
-                    {(subconWarnings.length > 0 || lowStockItems.length > 0 || pendingCashFlowCount > 0) && (
+                    {(sopAttentionStyles.length > 0 || subconWarnings.length > 0 || lowStockItems.length > 0 || pendingCashFlowCount > 0) && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
-                        {subconWarnings.length + lowStockItems.length}
+                        {sopAttentionStyles.length + subconWarnings.length + lowStockItems.length}
                       </span>
                     )}
                   </button>
@@ -225,13 +241,38 @@ export const Navbar: React.FC = () => {
                   {showNotifications && (
                     <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
                       <div className="p-2.5 bg-slate-900 text-white flex items-center justify-between text-xs font-bold">
-                        <span>Peringatan Sistem &amp; Warning H-3</span>
+                        <span>Peringatan SOP, Subkon H-3 &amp; Gudang</span>
                         <span className="text-[11px] text-amber-300">
-                          {subconWarnings.length} Subkon • {lowStockItems.length} Stok
+                          {sopAttentionStyles.length} SOP • {subconWarnings.length} Subkon • {lowStockItems.length} Stok
                         </span>
                       </div>
 
                       <div className="p-2.5 max-h-80 overflow-y-auto space-y-2 text-xs">
+                        {sopAttentionStyles.length > 0 && (
+                          <div className="space-y-1.5">
+                            <div className="text-[10px] font-extrabold uppercase tracking-wider text-red-700 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              <span>Style Perhatian Belum Sesuai SOP (PPIC)</span>
+                            </div>
+                            {sopAttentionStyles.map(att => (
+                              <div
+                                key={att.styleId}
+                                onClick={() => { setActiveTab('ppic-planning'); setShowNotifications(false); }}
+                                className="p-2.5 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors"
+                              >
+                                <div className="font-black text-slate-900 flex items-center justify-between gap-2">
+                                  <span className="truncate">{att.styleCode} — {att.styleName}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black shrink-0">
+                                    {att.totalDeviations} Deviasi SOP
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-red-900 mt-1 leading-snug">
+                                  {att.deviations[0]?.description || att.impactOnCuttingAndLine}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {subconWarnings.length > 0 && (
                           <div className="space-y-1.5">
                             <div className="text-[10px] font-extrabold uppercase tracking-wider text-red-700 flex items-center gap-1">

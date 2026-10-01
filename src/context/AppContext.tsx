@@ -13,7 +13,11 @@ import {
   SubconEarlyWarning,
   SOPWorkflowStep,
   ProductionComponentAllocation,
-  ProductionMaterialRequirement
+  ProductionMaterialRequirement,
+  CuttingOrderItem,
+  CuttingLoadingAllocation,
+  StyleSOPAttentionItem,
+  SOPDeviationDetail
 } from '../types';
 import { 
   INITIAL_USERS, 
@@ -24,7 +28,8 @@ import {
   INITIAL_SUBCON_TASKS,
   STANDARD_SOP_STEPS,
   INITIAL_PPIC_COMPONENTS,
-  INITIAL_PPIC_MATERIALS
+  INITIAL_PPIC_MATERIALS,
+  INITIAL_CUTTING_ORDERS
 } from '../data/initialData';
 
 interface AppContextType {
@@ -132,6 +137,21 @@ interface AppContextType {
   updateProductionMaterial: (id: string, updates: Partial<ProductionMaterialRequirement>) => void;
   deleteProductionMaterial: (id: string) => void;
 
+  // Cutting Orders, Waiting List Queue & Loading Allocations (Line & Subkon)
+  cuttingOrders: CuttingOrderItem[];
+  addCuttingOrder: (order: Omit<CuttingOrderItem, 'id' | 'queueNumber'>) => void;
+  updateCuttingOrder: (id: string, updates: Partial<CuttingOrderItem>) => void;
+  deleteCuttingOrder: (id: string) => void;
+  moveCuttingQueue: (id: string, direction: 'UP' | 'DOWN') => void;
+  updateCuttingLoadingAllocation: (
+    cuttingOrderId: string,
+    allocationId: string,
+    updates: Partial<CuttingLoadingAllocation>
+  ) => void;
+
+  // PPIC Monitor: Styles Attention Not Complying with SOP
+  sopAttentionStyles: StyleSOPAttentionItem[];
+
   // Cash Flow & Fund Check (Retained for backwards compatibility)
   cashFlow: CashFlowRecord[];
   addCashFlowRecord: (record: Omit<CashFlowRecord, 'id' | 'status'>) => void;
@@ -192,7 +212,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const parsed: UserAccount[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Ensure 'cutting' tab is included for internal roles that should have it by default
+          const migrated = parsed.map(u => {
+            if (u.role !== 'SUBCON' && !u.allowedTabs.includes('cutting')) {
+              return { ...u, allowedTabs: [...u.allowedTabs, 'cutting'] };
+            }
+            return u;
+          });
+          if (!migrated.some(u => u.username === 'cutting_tw')) {
+            const cuttingAcc = INITIAL_USERS.find(u => u.username === 'cutting_tw');
+            if (cuttingAcc) migrated.push(cuttingAcc);
+          }
+          return migrated;
         }
       } catch (e) {
         console.error(e);
@@ -216,7 +247,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [styles, setStyles] = useState<ProductionStyle[]>(() => {
-    const saved = localStorage.getItem('pt_tw_styles');
+    const saved = localStorage.getItem('pt_tw_styles_v2');
     return saved ? JSON.parse(saved) : INITIAL_STYLES;
   });
 
@@ -254,6 +285,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [productionMaterials, setProductionMaterials] = useState<ProductionMaterialRequirement[]>(() => {
     const saved = localStorage.getItem('pt_tw_ppic_materials');
     return saved ? JSON.parse(saved) : INITIAL_PPIC_MATERIALS;
+  });
+
+  // Cutting Orders & Waiting List Queue state
+  const [cuttingOrders, setCuttingOrders] = useState<CuttingOrderItem[]>(() => {
+    const saved = localStorage.getItem('pt_tw_cutting_orders_v1');
+    return saved ? JSON.parse(saved) : INITIAL_CUTTING_ORDERS;
   });
 
   const [activeTab, setActiveTab] = useState<string>('pe-workflow');
@@ -332,7 +369,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('pt_tw_styles', JSON.stringify(styles));
+    localStorage.setItem('pt_tw_styles_v2', JSON.stringify(styles));
   }, [styles]);
 
   useEffect(() => {
@@ -358,6 +395,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('pt_tw_ppic_materials', JSON.stringify(productionMaterials));
   }, [productionMaterials]);
+
+  useEffect(() => {
+    localStorage.setItem('pt_tw_cutting_orders_v1', JSON.stringify(cuttingOrders));
+  }, [cuttingOrders]);
 
   useEffect(() => {
     localStorage.setItem('pt_tw_gas_url', gasUrl);
@@ -469,6 +510,174 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return warnings.sort((a, b) => a.daysUntilDeadline - b.daysUntilDeadline);
   }, [subconTasks]);
+
+  // PPIC Engine: Style Perhatian yang Belum Sesuai dengan SOP
+  const sopAttentionStyles: StyleSOPAttentionItem[] = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const attentionList: StyleSOPAttentionItem[] = [];
+
+    styles.forEach(sty => {
+      if (sty.status === 'Completed') return;
+
+      const deviations: SOPDeviationDetail[] = [];
+
+      // Check each SOP step for deviations
+      sty.steps.forEach(step => {
+        // 1. Needs Review status
+        if (step.status === 'Needs Review') {
+          deviations.push({
+            stepId: step.id,
+            process: step.process,
+            picDept: step.picDept,
+            picName: step.picName,
+            status: step.status,
+            dateScheduled: step.dateScheduled,
+            actualDate: step.actualDate,
+            issueType: 'NEEDS_REVIEW',
+            description: step.notes || `Tahap #${step.id} (${step.process}) membutuhkan review/revisi SOP sebelum lanjut.`,
+            daysDelayed: 2
+          });
+          return;
+        }
+
+        // 2. Machine Breakdown Notes on uncompleted step
+        if (step.machineBreakdownNotes && step.status !== 'Completed') {
+          deviations.push({
+            stepId: step.id,
+            process: step.process,
+            picDept: step.picDept,
+            picName: step.picName,
+            status: step.status,
+            dateScheduled: step.dateScheduled,
+            actualDate: step.actualDate,
+            issueType: 'MACHINE_ISSUE',
+            description: `Kendala Mesin/Attachment: ${step.machineBreakdownNotes}`,
+            daysDelayed: 1
+          });
+          return;
+        }
+
+        // 3. Actual Date later than Scheduled Date
+        if (step.actualDate && step.dateScheduled && step.actualDate > step.dateScheduled) {
+          const schedD = new Date(step.dateScheduled + 'T00:00:00');
+          const actD = new Date(step.actualDate + 'T00:00:00');
+          const diffDays = Math.max(1, Math.round((actD.getTime() - schedD.getTime()) / (1000 * 60 * 60 * 24)));
+          // Flag if step is not completed OR if delay is >= 2 days
+          if (step.status !== 'Completed' || diffDays >= 2) {
+            deviations.push({
+              stepId: step.id,
+              process: step.process,
+              picDept: step.picDept,
+              picName: step.picName,
+              status: step.status,
+              dateScheduled: step.dateScheduled,
+              actualDate: step.actualDate,
+              issueType: 'LATE_ACTUAL',
+              description: `Tanggal aktual (${step.actualDate}) mundur +${diffDays} hari dari jadwal SOP (${step.dateScheduled}). ${step.notes || ''}`.trim(),
+              daysDelayed: diffDays
+            });
+            return;
+          }
+        }
+
+        // 4. Bypassed Prerequisite: Step is before or at currentWorkflowStep (or required for Cutting Step <= 11) and still Pending/In Progress past schedule
+        if (step.status !== 'Completed' && step.id <= Math.max(sty.currentWorkflowStep + 1, 11)) {
+          if (step.id < sty.currentWorkflowStep) {
+            deviations.push({
+              stepId: step.id,
+              process: step.process,
+              picDept: step.picDept,
+              picName: step.picName,
+              status: step.status,
+              dateScheduled: step.dateScheduled,
+              actualDate: step.actualDate,
+              issueType: 'BYPASSED_PREREQUISITE',
+              description: `Prasyarat SOP Tahap #${step.id} (${step.process}) belum selesai (${step.status}), namun style sudah berada di Tahap #${sty.currentWorkflowStep}!`,
+              daysDelayed: 2
+            });
+          } else if (step.notes && (step.notes.toLowerCase().includes('perhatian') || step.notes.toLowerCase().includes('terlambat') || step.notes.toLowerCase().includes('tertunda') || step.notes.toLowerCase().includes('belum') || step.notes.toLowerCase().includes('safety stock') || step.notes.toLowerCase().includes('menunggu'))) {
+            deviations.push({
+              stepId: step.id,
+              process: step.process,
+              picDept: step.picDept,
+              picName: step.picName,
+              status: step.status,
+              dateScheduled: step.dateScheduled,
+              actualDate: step.actualDate,
+              issueType: 'OVERDUE',
+              description: step.notes,
+              daysDelayed: 1
+            });
+          }
+        }
+      });
+
+      // Check BOM Material shortages for this style
+      const styleMaterials = productionMaterials.filter(m => m.styleCode === sty.code);
+      const shortMaterials = styleMaterials.filter(m => m.status === 'Shortage' || m.status === 'Partial' || (m.balanceQty !== undefined && m.balanceQty < 0));
+      const lowWhStock = stock.filter(s => s.styleCode === sty.code && s.currentStock <= s.minStockLevel);
+
+      const shortageNames = Array.from(new Set([
+        ...shortMaterials.map(m => `${m.materialName} (${m.status})`),
+        ...lowWhStock.map(s => `${s.name} (Stok: ${s.currentStock}/${s.minStockLevel} ${s.unit})`)
+      ]));
+
+      // Check if any Cutting Order for this style is flagged as PERHATIAN_SOP or HOLD_SOP
+      const relatedCutOrders = cuttingOrders.filter(co => co.styleCode === sty.code);
+      const hasHoldCut = relatedCutOrders.some(co => co.queueStatus === 'HOLD_SOP' || co.sopComplianceStatus === 'PERHATIAN_SOP');
+
+      if (deviations.length > 0 || shortageNames.length > 0 || hasHoldCut) {
+        const hasCritical = deviations.some(d => d.issueType === 'NEEDS_REVIEW' || d.issueType === 'BYPASSED_PREREQUISITE' || d.issueType === 'MACHINE_ISSUE') || shortMaterials.some(m => m.status === 'Shortage');
+        const severity: StyleSOPAttentionItem['severity'] = hasCritical
+          ? 'CRITICAL'
+          : deviations.length >= 2 || shortageNames.length > 0
+          ? 'WARNING'
+          : 'ATTENTION';
+
+        let impact = 'Berpotensi menghambat jadwal potong (Cutting) & kestabilan suplai bundle ke Line Sewing.';
+        let recommendation = 'Segera koordinasikan PE, Gudang & Leader Cutting untuk menyelesaikan tahapan SOP yang tertunda.';
+
+        if (sty.code === 'TW-POLO-26') {
+          impact = 'Perintah Potong di Antrian Waiting List #3 tertahan karena kalibrasi folder placket (Step 5), Pilot Sample (Step 6-7) & PPM (Step 9) belum tuntas.';
+          recommendation = 'PPIC & PE wajib memprioritaskan approval Pilot Sample 5 pcs dan menggelar PPM hari ini sebelum kain Pique CVC digelar di Meja Potong 01.';
+        } else if (sty.code === 'TW-BATIK-09') {
+          impact = 'Perintah Potong berstatus HOLD_SOP di Antrian #5; berisiko gagal matching motif saku & luntur warna jika dipaksakan potong.';
+          recommendation = 'Tahan proses gelar kain batik sampai hasil Lab Uji Luntur (Step 3) dan revisi pola saku PPS (Step 4) dinyatakan sesuai SOP oleh QC/PE.';
+        } else if (sty.code === 'TW-JKT-88') {
+          impact = 'Cutting utama sedang berjalan, namun defisit Benang Spun Poly Navy & Furing Asahi serta Step 14 (Loading Komponen) belum tuntas dapat menghentikan Line 1 & 2.';
+          recommendation = 'PPIC segera terbitkan PR/PO percepatan benang & furing, serta instruksikan Cutting mempercepat numbering & loading bundle ke Line 1 & Subkon.';
+        }
+
+        const completedStepsCount = sty.steps.filter(s => s.status === 'Completed').length;
+        const totalStepsCount = sty.steps.length || 14;
+        const sopCompletionPercent = Math.round((completedStepsCount / totalStepsCount) * 100);
+
+        attentionList.push({
+          styleId: sty.id,
+          styleCode: sty.code,
+          styleName: sty.name,
+          buyer: sty.buyer,
+          targetQuantityPcs: sty.targetQuantityPcs || 0,
+          deliveryDate: sty.deliveryDate,
+          styleStatus: sty.status,
+          currentWorkflowStep: sty.currentWorkflowStep,
+          completedStepsCount,
+          totalStepsCount,
+          sopCompletionPercent,
+          severity,
+          totalDeviations: deviations.length,
+          deviations,
+          materialShortageCount: shortageNames.length,
+          materialShortageNames: shortageNames,
+          impactOnCuttingAndLine: impact,
+          recommendedAction: recommendation
+        });
+      }
+    });
+
+    const sevOrder = { CRITICAL: 0, WARNING: 1, ATTENTION: 2 };
+    return attentionList.sort((a, b) => sevOrder[a.severity] - sevOrder[b.severity]);
+  }, [styles, productionMaterials, stock, cuttingOrders]);
 
   // Login handler (requires username and password)
   const login = (username: string, password?: string) => {
@@ -1449,6 +1658,96 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProductionMaterials(prev => prev.filter(mat => mat.id !== id));
   };
 
+  // Cutting Orders, Waiting List & Loading Allocations CRUD
+  const addCuttingOrder = (order: Omit<CuttingOrderItem, 'id' | 'queueNumber'>) => {
+    setCuttingOrders(prev => {
+      const maxQueue = prev.reduce((max, item) => Math.max(max, item.queueNumber), 0);
+      const newOrder: CuttingOrderItem = {
+        ...order,
+        id: `CUT-${Date.now().toString().slice(-6)}`,
+        queueNumber: maxQueue + 1
+      };
+      return [...prev, newOrder];
+    });
+  };
+
+  const updateCuttingOrder = (id: string, updates: Partial<CuttingOrderItem>) => {
+    setCuttingOrders(prev => prev.map(order => {
+      if (order.id !== id) return order;
+      const updated = { ...order, ...updates };
+      // Also sync cuttingProgressPcs on the style if actualCutPcs was updated
+      if (updates.actualCutPcs !== undefined) {
+        const diff = updates.actualCutPcs - order.actualCutPcs;
+        if (diff !== 0) {
+          setStyles(styPrev => styPrev.map(s => {
+            if (s.code === order.styleCode) {
+              return {
+                ...s,
+                cuttingProgressPcs: Math.min(s.targetQuantityPcs, Math.max(0, s.cuttingProgressPcs + diff))
+              };
+            }
+            return s;
+          }));
+        }
+      }
+      return updated;
+    }));
+  };
+
+  const deleteCuttingOrder = (id: string) => {
+    setCuttingOrders(prev => {
+      const filtered = prev.filter(o => o.id !== id);
+      return filtered.map((o, idx) => ({ ...o, queueNumber: idx + 1 }));
+    });
+  };
+
+  const moveCuttingQueue = (id: string, direction: 'UP' | 'DOWN') => {
+    setCuttingOrders(prev => {
+      const sorted = [...prev].sort((a, b) => a.queueNumber - b.queueNumber);
+      const idx = sorted.findIndex(o => o.id === id);
+      if (idx === -1) return prev;
+      const swapIdx = direction === 'UP' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= sorted.length) return prev;
+
+      const tempQueue = sorted[idx].queueNumber;
+      sorted[idx] = { ...sorted[idx], queueNumber: sorted[swapIdx].queueNumber };
+      sorted[swapIdx] = { ...sorted[swapIdx], queueNumber: tempQueue };
+
+      return sorted.sort((a, b) => a.queueNumber - b.queueNumber);
+    });
+  };
+
+  const updateCuttingLoadingAllocation = (
+    cuttingOrderId: string,
+    allocationId: string,
+    updates: Partial<CuttingLoadingAllocation>
+  ) => {
+    setCuttingOrders(prev => prev.map(order => {
+      if (order.id !== cuttingOrderId) return order;
+      const updatedAllocations = order.loadingAllocations.map(alloc => {
+        if (alloc.id !== allocationId) return alloc;
+        const nextAlloc = { ...alloc, ...updates };
+        if (updates.loadedActualPcs !== undefined && updates.loadingStatus === undefined) {
+          if (nextAlloc.loadedActualPcs >= nextAlloc.allocatedLoadingPcs) {
+            nextAlloc.loadingStatus = 'Loaded';
+          } else if (nextAlloc.loadedActualPcs > 0) {
+            nextAlloc.loadingStatus = 'Partial Loaded';
+          } else {
+            nextAlloc.loadingStatus = order.actualCutPcs > 0 ? 'Ready to Load' : 'Waiting Cut';
+          }
+        }
+        return nextAlloc;
+      });
+
+      const allLoaded = updatedAllocations.length > 0 && updatedAllocations.every(a => a.loadingStatus === 'Loaded');
+      return {
+        ...order,
+        loadingAllocations: updatedAllocations,
+        queueStatus: allLoaded ? 'LOADED' : order.queueStatus
+      };
+    }));
+  };
+
   const updateSubconTask = (id: string, updates: Partial<SubcontractorTask>) => {
     setSubconTasks(prev => prev.map(task => {
       if (task.id === id) {
@@ -1625,7 +1924,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         targetPcs: s.targetQuantityPcs,
         delivery: s.deliveryDate,
         status: s.status,
-        totalBudget: s.totalBudget,
+        totalBudget: s.allocatedBudget,
         usedBudget: s.usedBudget
       })),
       stockCount: stock.length,
@@ -1730,6 +2029,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addProductionMaterial,
         updateProductionMaterial,
         deleteProductionMaterial,
+        cuttingOrders,
+        addCuttingOrder,
+        updateCuttingOrder,
+        deleteCuttingOrder,
+        moveCuttingQueue,
+        updateCuttingLoadingAllocation,
+        sopAttentionStyles,
         cashFlow,
         addCashFlowRecord,
         approveCashFlow,

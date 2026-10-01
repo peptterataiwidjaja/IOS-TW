@@ -435,35 +435,24 @@ export const SubcontractorManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       
       {/* ========================================================================= */}
       {/* ACTIVE SUBCON ACCOUNT BANNER (WHEN LOGGED IN AS SUBCON)                  */}
       {/* ========================================================================= */}
       {currentUser.role === 'SUBCON' && (
-        <div className="bg-gradient-to-r from-cyan-900 via-cyan-800 to-slate-900 text-white rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/20 border border-cyan-400/30">
-              <KeyRound className="w-5 h-5 text-cyan-300" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-400 text-slate-950">
-                  Akun Khusus Mitra Subkon Aktif
-                </span>
-                <span className="text-xs font-mono text-cyan-200">User: {currentUser.username}</span>
-              </div>
-              <h2 className="text-sm font-black mt-0.5">
-                {currentUser.name} — Portal Laporan Target Harian Subkon
-              </h2>
-            </div>
+        <div className="bg-slate-900 text-white rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] text-cyan-300 font-medium">@{currentUser.username}</div>
+            <h2 className="text-sm font-bold">
+              {currentUser.name}
+            </h2>
           </div>
           <button
             onClick={() => setIsLoginModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold cursor-pointer shrink-0 transition-colors"
           >
-            <UserCheck className="w-3.5 h-3.5 text-cyan-300" />
-            <span>Ganti Akun (Login User &amp; Pass)</span>
+            Ganti Akun
           </button>
         </div>
       )}
@@ -472,27 +461,15 @@ export const SubcontractorManager: React.FC = () => {
       {/* NEWLY CREATED SUBCON ACCOUNT NOTIFICATION BANNER                          */}
       {/* ========================================================================= */}
       {createdAccountBanner && (
-        <div className="bg-emerald-950 text-white rounded-2xl p-4 border border-emerald-700 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+        <div className="bg-emerald-950 text-white rounded-xl p-3.5 border border-emerald-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-emerald-400 text-emerald-950 text-[10px] font-black uppercase">
-                SPK &amp; Akun Subkon Berhasil Dibuat
-              </span>
-              <span className="text-xs font-mono text-emerald-300">{createdAccountBanner.taskId}</span>
+            <div className="text-xs font-bold text-emerald-300">
+              SPK &amp; Akun Dibuat: {createdAccountBanner.subconName} ({createdAccountBanner.taskId})
             </div>
-            <div className="text-sm font-black">
-              Akses Akun Khusus untuk <span className="text-emerald-300">{createdAccountBanner.subconName}</span> Siap Digunakan!
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-emerald-100 pt-1">
-              <span className="bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-700 font-mono">
-                User: <strong className="text-white">{createdAccountBanner.username}</strong>
-              </span>
-              <span className="bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-700 font-mono">
-                Password: <strong className="text-white">•••••• (Tersimpan)</strong>
-              </span>
-              <span className="bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-700">
-                Wajib Input Target: <strong className="text-white">{createdAccountBanner.dailyTarget} Pcs/Hari</strong>
-              </span>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-emerald-100">
+              <span className="font-mono">User: <strong>{createdAccountBanner.username}</strong></span>
+              <span>·</span>
+              <span>Target: <strong>{createdAccountBanner.dailyTarget} pcs/hr</strong></span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -502,14 +479,14 @@ export const SubcontractorManager: React.FC = () => {
                 if (task) handleQuickSwitchToSubcon(task);
                 setCreatedAccountBanner(null);
               }}
-              className="px-3.5 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-black text-xs cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold text-xs cursor-pointer flex items-center gap-1"
             >
               <LogIn className="w-3.5 h-3.5" />
-              <span>Buka Portal Input Subkon</span>
+              <span>Portal Subkon</span>
             </button>
             <button
               onClick={() => setCreatedAccountBanner(null)}
-              className="p-2 text-emerald-300 hover:text-white cursor-pointer"
+              className="p-1 text-emerald-300 hover:text-white cursor-pointer"
             >
               &times;
             </button>
@@ -521,105 +498,81 @@ export const SubcontractorManager: React.FC = () => {
       {/* TOP HEADER & MODE SWITCHER (INTERNAL / PE ONLY — HIDDEN FOR SUBCON)       */}
       {/* ========================================================================= */}
       {currentUser.role !== 'SUBCON' && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-md bg-cyan-100 text-cyan-800 text-xs font-bold flex items-center gap-1 border border-cyan-200">
-                  <Truck className="w-3.5 h-3.5 text-cyan-700" />
-                  Kontrol Subkon &amp; Target Harian
-                </span>
-                {subconWarnings.length > 0 && (
-                  <span className="px-2.5 py-0.5 rounded-md bg-red-600 text-white text-xs font-black flex items-center gap-1 animate-pulse">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    {subconWarnings.length} Warning H-3 Terdeteksi!
-                  </span>
-                )}
-              </div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Manajemen Subkon, Analisis Target Harian &amp; Peringatan Dini (H-3)
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Setiap SPK subkon dilengkapi akun khusus untuk input target harian, analisis capaian otomatis, dan deteksi masalah 3 hari sebelum batas kirim.
-              </p>
-            </div>
+        <div className="bg-white rounded-xl p-4 border border-slate-200">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <h1 className="text-base font-bold text-slate-900">
+              Subkon &amp; Target Harian
+            </h1>
 
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               {/* Switch Mode: Monitoring vs Portal Input Harian Subkon */}
-              <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center gap-1">
+              <div className="bg-slate-100 p-1 rounded-lg border border-slate-200 flex items-center gap-1">
                 <button
                   onClick={() => setViewMode('MONITORING')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                     viewMode === 'MONITORING'
                       ? 'bg-slate-900 text-white shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
-                  <span>Analisis &amp; Monitoring SPK</span>
+                  <span>Monitoring SPK</span>
                 </button>
                 <button
                   onClick={() => setViewMode('SUBCON_PORTAL')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                     viewMode === 'SUBCON_PORTAL'
                       ? 'bg-cyan-700 text-white shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5" />
-                  <span>Portal Input Harian Subkon</span>
+                  <span>Input Harian</span>
                 </button>
               </div>
 
               <button
                 onClick={() => openPrintModal('subcon')}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold transition-colors cursor-pointer"
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                title="Cetak PDF"
               >
-                <Printer className="w-3.5 h-3.5 text-slate-600" />
-                <span className="hidden sm:inline">Cetak PDF</span>
+                <Printer className="w-4 h-4" />
               </button>
 
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-semibold transition-colors cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>+ Beri Pekerjaan Subkon &amp; Buat Akun</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>SPK Subkon</span>
               </button>
             </div>
           </div>
 
           {/* Summary KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-            <div className="p-3 rounded-xl bg-red-50/70 border border-red-200">
-              <div className="text-[11px] text-red-700 font-bold flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Warning Masalah (H-3)</span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-3.5 border-t border-slate-100">
+            <div>
+              <div className="text-[11px] text-slate-500">Warning H-3</div>
+              <div className="text-xl font-bold text-red-600 tabular-nums mt-0.5">
+                {subconWarnings.length} SPK
               </div>
-              <div className="text-xl font-black text-red-700 mt-0.5">
-                {subconWarnings.length} SPK Berisiko
-              </div>
-              <div className="text-[10px] text-red-600/80">Deteksi otomatis 3 hari sebelum deadline</div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="text-[11px] text-slate-500 font-semibold">Pekerjaan Subkon Aktif (WIP)</div>
-              <div className="text-xl font-black text-cyan-700 mt-0.5">{activeWIPCount} SPK Jalan</div>
-              <div className="text-[10px] text-slate-400">Wajib lapor target harian via akun subkon</div>
+            <div>
+              <div className="text-[11px] text-slate-500">SPK Aktif</div>
+              <div className="text-xl font-bold text-cyan-700 tabular-nums mt-0.5">{activeWIPCount} SPK</div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="text-[11px] text-slate-500 font-semibold">Ketidaksesuaian QC</div>
-              <div className={`text-xl font-black mt-0.5 ${discrepancyCount > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
+            <div>
+              <div className="text-[11px] text-slate-500">Temuan QC</div>
+              <div className={`text-xl font-bold tabular-nums mt-0.5 ${discrepancyCount > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
                 {discrepancyCount} Kasus
               </div>
-              <div className="text-[10px] text-slate-400">Retur rework / klaim potongan biaya</div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="text-[11px] text-slate-500 font-semibold">Total Nilai Kontrak Subkon</div>
-              <div className="text-xl font-black text-slate-900 mt-0.5">Rp {totalCostAllSubcon.toLocaleString('id-ID')}</div>
-              <div className="text-[10px] text-slate-400">Tersinkronisasi dengan Arus Kas</div>
+            <div>
+              <div className="text-[11px] text-slate-500">Total Kontrak</div>
+              <div className="text-xl font-bold text-slate-900 tabular-nums mt-0.5">Rp {totalCostAllSubcon.toLocaleString('id-ID')}</div>
             </div>
           </div>
         </div>
@@ -629,107 +582,50 @@ export const SubcontractorManager: React.FC = () => {
       {/* PERINGATAN DINI H-3 (ONLY FOR INTERNAL / PE — HIDDEN FOR SUBCON)          */}
       {/* ========================================================================= */}
       {currentUser.role !== 'SUBCON' && subconWarnings.length > 0 && (
-        <div className="bg-gradient-to-r from-red-50 via-amber-50/70 to-red-50 rounded-2xl p-4 sm:p-5 border-2 border-red-300 shadow-xs space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-red-200">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-red-600 text-white shadow-xs shrink-0">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-red-600 text-white">
-                    Early Warning System (H-3)
-                  </span>
-                  <span className="text-xs font-bold text-red-800">
-                    Deteksi Masalah 3 Hari Sebelum Target Kembali
-                  </span>
-                </div>
-                <h2 className="text-sm font-black text-slate-900 mt-0.5">
-                  Perhatian! {subconWarnings.length} Pekerjaan Subkon Mengalami Defisit Target Harian / Kendala Produksi Menjelang Deadline
-                </h2>
-              </div>
-            </div>
+        <div className="bg-red-50/70 rounded-xl p-3.5 border border-red-200 space-y-2.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-red-800">
+            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+            <span>Warning H-3 ({subconWarnings.length} SPK Defisit Target)</span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
             {subconWarnings.map((warn) => {
               const taskObj = subconTasks.find(t => t.id === warn.taskId);
               return (
                 <div
                   key={warn.taskId}
-                  className="bg-white rounded-xl p-4 border border-red-200 shadow-2xs flex flex-col justify-between gap-3"
+                  className="bg-white rounded-lg p-3 border border-red-200 flex flex-col justify-between gap-2"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-black text-slate-900 text-sm">{warn.subconName}</span>
-                          <span className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                            {warn.styleCode}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 font-medium">
-                          {warn.serviceType} • SPK: {warn.taskId} • Deadline: <strong>{warn.estReturnDate}</strong>
-                        </div>
-                      </div>
-
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-black shrink-0 ${
-                        warn.daysUntilDeadline < 0
-                          ? 'bg-red-700 text-white'
-                          : 'bg-red-600 text-white animate-pulse'
-                      }`}>
-                        {warn.daysUntilDeadline < 0
-                          ? `TERLAMBAT ${Math.abs(warn.daysUntilDeadline)} HARI`
-                          : warn.daysUntilDeadline === 0
-                          ? 'DEADLINE HARI INI (H-0)'
-                          : `WARNING H-${warn.daysUntilDeadline} (${warn.daysUntilDeadline} Hari Lagi)`}
-                      </span>
-                    </div>
-
-                    {/* Analytical Comparison Box */}
-                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px]">
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Target vs Aktual Harian</span>
-                        <span className="font-black text-red-600">
-                          {warn.avgActualDailyPcs} <span className="text-slate-400 font-normal">/ {warn.dailyTargetPcs} pcs</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-900 text-xs">{warn.subconName}</span>
+                        <span className="text-[11px] font-mono font-bold text-indigo-700">
+                          {warn.styleCode}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Sisa Belum Selesai</span>
-                        <span className="font-black text-slate-900">
-                          {warn.remainingQty.toLocaleString()} <span className="text-slate-400 font-normal">dari {warn.quantitySend}</span>
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Target Kejar Baru</span>
-                        <span className="font-black text-amber-700">
-                          {warn.requiredDailyRateToFinish} pcs/hari
-                        </span>
+                      <div className="text-[11px] text-slate-500">
+                        {warn.serviceType} ·Aktual {warn.avgActualDailyPcs}/{warn.dailyTargetPcs} pcs/hr · Sisa {warn.remainingQty.toLocaleString()} pcs
                       </div>
                     </div>
 
-                    {/* Reasons & Reported Issue */}
-                    <div className="space-y-1 text-xs">
-                      {warn.reasons.map((r, i) => (
-                        <div key={i} className="flex items-start gap-1.5 text-red-800 font-medium text-[11px]">
-                          <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
-                          <span>{r}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <span className="px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold shrink-0">
+                      {warn.daysUntilDeadline < 0
+                        ? `Telat ${Math.abs(warn.daysUntilDeadline)} Hr`
+                        : `H-${warn.daysUntilDeadline}`}
+                    </span>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-[10px] font-bold text-slate-500">
-                      Prediksi Selesai: <strong className="text-red-700">Meleset +{warn.projectedDelayDays} Hari</strong> jika tanpa intervensi
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100">
+                    <span className="text-[11px] text-red-700 font-medium truncate">
+                      {warn.reasons[0]}
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => setAnalyzingTaskId(warn.taskId)}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        className="px-2 py-1 rounded bg-slate-900 text-white text-[10px] font-semibold cursor-pointer"
                       >
-                        <BarChart3 className="w-3 h-3 text-cyan-400" />
-                        <span>Buka Analisis</span>
+                        Analisis
                       </button>
                       {taskObj && (
                         <button
@@ -737,10 +633,9 @@ export const SubcontractorManager: React.FC = () => {
                             setSelectedPortalTaskId(taskObj.id);
                             setViewMode('SUBCON_PORTAL');
                           }}
-                          className="px-2.5 py-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                          className="px-2 py-1 rounded bg-cyan-700 text-white text-[10px] font-semibold cursor-pointer"
                         >
-                          <Activity className="w-3 h-3" />
-                          <span>Input Harian</span>
+                          Input
                         </button>
                       )}
                     </div>
@@ -756,27 +651,18 @@ export const SubcontractorManager: React.FC = () => {
       {/* VIEW MODE 2: PORTAL INPUT HARIAN KHUSUS SUBKON                            */}
       {/* ========================================================================= */}
       {viewMode === 'SUBCON_PORTAL' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           
           {/* Left Column (5 cols): Form Input Data Harian Target oleh Subkon */}
-          <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="bg-cyan-900 text-white p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-cyan-700">
-                  <Activity className="w-4 h-4 text-cyan-200" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black">Input Data Harian Target Subkon</h2>
-                  <p className="text-[11px] text-cyan-200">
-                    Masukkan hasil capaian produksi harian sesuai target SPK
-                  </p>
-                </div>
-              </div>
+          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 overflow-hidden h-fit">
+            <div className="bg-cyan-900 text-white px-4 py-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-cyan-200" />
+              <h2 className="text-xs font-bold">Input Produksi Harian Subkon</h2>
             </div>
 
-            <form onSubmit={handleSubmitDailyLog} className="p-5 space-y-4 text-xs">
+            <form onSubmit={handleSubmitDailyLog} className="p-4 space-y-3 text-xs">
               {portalFeedback && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 font-bold flex items-center gap-2">
+                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900 font-bold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>{portalFeedback}</span>
                 </div>
@@ -785,406 +671,257 @@ export const SubcontractorManager: React.FC = () => {
               {/* Pilih SPK Subkon */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Pilih SPK Pekerjaan Subkon *
+                  SPK Subkon *
                 </label>
                 <select
                   value={portalTask?.id || ''}
                   onChange={(e) => setSelectedPortalTaskId(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 font-bold text-slate-900 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-cyan-600"
+                  className="w-full p-2 rounded-lg border border-slate-300 font-bold text-slate-900 bg-slate-50"
                 >
                   {availablePortalTasks.map(t => (
                     <option key={t.id} value={t.id}>
-                      {t.id} — {t.subconName} ({t.styleCode} • {t.quantitySend} Pcs)
+                      {t.id} — {t.subconName} ({t.styleCode})
                     </option>
                   ))}
                 </select>
-                {portalTask?.subconUsername && (
-                  <div className="mt-1.5 flex items-center justify-between text-[11px] bg-cyan-50/80 px-2.5 py-1.5 rounded-lg border border-cyan-200 text-cyan-900">
-                    <span>Akun Akses: <strong>@{portalTask.subconUsername}</strong></span>
-                    <span>Target Kembali: <strong>{portalTask.estReturnDate}</strong></span>
-                  </div>
-                )}
               </div>
 
               {/* Tanggal & Target Harian */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Tanggal Produksi *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Tanggal *</label>
                   <input
                     type="date"
                     value={logDate}
                     onChange={(e) => setLogDate(e.target.value)}
-                    className="w-full p-2 rounded-xl border border-slate-300 font-bold text-slate-900"
+                    className="w-full p-2 rounded-lg border border-slate-300 font-bold text-slate-900"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Target Harian (Pcs) *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Target/Hr (Pcs) *</label>
                   <input
                     type="number"
                     min="1"
                     value={logTargetPcs}
                     onChange={(e) => setLogTargetPcs(Number(e.target.value))}
-                    className="w-full p-2 rounded-xl border border-slate-300 font-black text-slate-700 bg-slate-50"
+                    className="w-full p-2 rounded-lg border border-slate-300 font-bold text-slate-700 bg-slate-50"
                     required
                   />
                 </div>
               </div>
 
               {/* Capaian Output Aktual & Reject */}
-              <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-blue-50/50 border border-blue-200 space-y-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block font-extrabold text-blue-950 mb-1">
-                      Hasil Selesai Hari Ini (Pcs OK) *
+                    <label className="block font-bold text-blue-950 mb-1">
+                      Hasil Selesai (Pcs OK) *
                     </label>
                     <input
                       type="number"
                       min="0"
                       value={logActualPcs}
                       onChange={(e) => setLogActualPcs(Number(e.target.value))}
-                      className="w-full p-2.5 rounded-xl border border-blue-400 font-black text-base text-slate-900 bg-white focus:ring-2 focus:ring-blue-600"
+                      className="w-full p-2 rounded-lg border border-blue-400 font-black text-sm text-slate-900 bg-white"
                       required
                     />
                   </div>
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">
-                      Jumlah Cacat / Reject (Pcs)
+                      Reject (Pcs)
                     </label>
                     <input
                       type="number"
                       min="0"
                       value={logRejectPcs}
                       onChange={(e) => setLogRejectPcs(Number(e.target.value))}
-                      className="w-full p-2.5 rounded-xl border border-slate-300 font-bold text-base text-rose-600 bg-white"
+                      className="w-full p-2 rounded-lg border border-slate-300 font-bold text-sm text-rose-600 bg-white"
                     />
                   </div>
                 </div>
-
-                {/* Live Comparison Indicator */}
-                {logTargetPcs > 0 && (
-                  <div className={`p-2 rounded-lg text-[11px] font-bold flex items-center justify-between ${
-                    logActualPcs >= logTargetPcs
-                      ? 'bg-emerald-100 text-emerald-900'
-                      : 'bg-amber-100 text-amber-900'
-                  }`}>
-                    <span>
-                      Pencapaian Hari Ini: {Math.round((logActualPcs / logTargetPcs) * 100)}% dari Target
-                    </span>
-                    <span>
-                      {logActualPcs >= logTargetPcs
-                        ? `+${logActualPcs - logTargetPcs} Pcs (Target Tercapai)`
-                        : `Kurang ${logTargetPcs - logActualPcs} Pcs dari Target`}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Jumlah Operator & Status Masalah */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Jumlah Operator / Mesin Jalan Hari Ini
+                  Operator / Mesin Jalan
                 </label>
                 <input
                   type="number"
                   min="1"
                   value={logWorkers}
                   onChange={(e) => setLogWorkers(Number(e.target.value))}
-                  className="w-full p-2 rounded-xl border border-slate-300 font-bold text-slate-800"
+                  className="w-full p-2 rounded-lg border border-slate-300 font-bold text-slate-800"
                 />
               </div>
 
               {/* Apakah Ada Masalah / Kendala? */}
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-2">
                 <label className="block font-bold text-slate-800">
-                  Catatan Kelancaran Produksi Hari Ini:
+                  Status Produksi:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setLogHasIssue(false)}
-                    className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                    className={`p-2 rounded-lg border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                       !logHasIssue
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-slate-600 border-slate-200'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Lancar / Normal</span>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Lancar</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setLogHasIssue(true)}
-                    className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                    className={`p-2 rounded-lg border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                       logHasIssue
-                        ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-amber-50'
+                        ? 'bg-amber-600 text-white border-amber-600'
+                        : 'bg-white text-slate-600 border-slate-200'
                     }`}
                   >
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>Ada Kendala</span>
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>Kendala</span>
                   </button>
                 </div>
 
                 {logHasIssue && (
-                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-2.5 animate-in fade-in duration-150">
-                    <div>
-                      <label className="block font-bold text-amber-900 mb-1">Kategori Kendala *</label>
-                      <select
-                        value={logIssueCategory}
-                        onChange={(e) => setLogIssueCategory(e.target.value as SubconIssueCategory)}
-                        className="w-full p-2 rounded-lg border border-amber-300 font-bold text-slate-900 bg-white"
-                      >
-                        <option value="Mesin Bermasalah / Breakdown">Mesin Bermasalah / Breakdown</option>
-                        <option value="Bahan Baku / Panel Kurang">Bahan Baku / Panel Kurang</option>
-                        <option value="Operator Absen / Kurang Tenaga">Operator Absen / Kurang Tenaga</option>
-                        <option value="Masalah Kualitas (Reject Tinggi)">Masalah Kualitas (Reject Tinggi)</option>
-                        <option value="Listrik / Utilitas Terkendala">Listrik / Utilitas Terkendala</option>
-                        <option value="Lainnya">Lainnya</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block font-bold text-amber-900 mb-1">
-                        Keterangan Kendala Produksi *
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={logIssueNotes}
-                        onChange={(e) => setLogIssueNotes(e.target.value)}
-                        placeholder="Tuliskan keterangan kendala produksi hari ini..."
-                        className="w-full p-2 rounded-lg border border-amber-300 font-medium text-slate-900 bg-white"
-                        required={logHasIssue}
-                      />
-                    </div>
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 space-y-2">
+                    <select
+                      value={logIssueCategory}
+                      onChange={(e) => setLogIssueCategory(e.target.value as SubconIssueCategory)}
+                      className="w-full p-2 rounded-lg border border-amber-300 font-bold text-slate-900 bg-white"
+                    >
+                      <option value="Mesin Bermasalah / Breakdown">Mesin Bermasalah / Breakdown</option>
+                      <option value="Bahan Baku / Panel Kurang">Bahan Baku / Panel Kurang</option>
+                      <option value="Operator Absen / Kurang Tenaga">Operator Absen / Kurang Tenaga</option>
+                      <option value="Masalah Kualitas (Reject Tinggi)">Masalah Kualitas (Reject Tinggi)</option>
+                      <option value="Listrik / Utilitas Terkendala">Listrik / Utilitas Terkendala</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                    <textarea
+                      rows={2}
+                      value={logIssueNotes}
+                      onChange={(e) => setLogIssueNotes(e.target.value)}
+                      placeholder="Catatan kendala..."
+                      className="w-full p-2 rounded-lg border border-amber-300 font-medium text-slate-900 bg-white"
+                      required={logHasIssue}
+                    />
                   </div>
                 )}
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-black text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                className="w-full py-2.5 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
-                <Send className="w-4 h-4" />
-                <span>Simpan Input Data Harian</span>
+                <Send className="w-3.5 h-3.5" />
+                <span>Simpan Harian</span>
               </button>
             </form>
           </div>
 
-          {/* Right Column (7 cols): Daily Input History (Without Early Warning Notifications for SUBCON) */}
-          <div className="lg:col-span-7 space-y-4">
+          {/* Right Column (7 cols): Daily Input History */}
+          <div className="lg:col-span-7 space-y-3">
             {portalTask && (() => {
               const stats = getTaskAnalytics(portalTask);
               return (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-black text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
-                          {portalTask.id}
-                        </span>
-                        <span className="text-xs font-mono font-bold text-indigo-700">
-                          Style: {portalTask.styleCode}
-                        </span>
+                        <span className="text-xs font-mono font-bold text-cyan-800">{portalTask.id}</span>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-xs font-mono font-bold text-indigo-700">{portalTask.styleCode}</span>
                       </div>
-                      <h3 className="text-base font-black text-slate-900 mt-1">
-                        {currentUser.role === 'SUBCON'
-                          ? `Rekap Input Harian: ${portalTask.subconName} (${portalTask.type})`
-                          : `Analisis Target Harian: ${portalTask.subconName} (${portalTask.type})`}
+                      <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+                        {portalTask.subconName} ({portalTask.type})
                       </h3>
                     </div>
 
-                    {currentUser.role === 'SUBCON' ? (
-                      <span className="px-3 py-1 rounded-xl text-xs font-bold shrink-0 bg-slate-100 text-slate-700 border border-slate-200">
-                        Target Kembali: {portalTask.estReturnDate}
-                      </span>
-                    ) : (
-                      <span className={`px-3 py-1 rounded-xl text-xs font-black shrink-0 ${
-                        stats.daysUntilDeadline <= 3 && stats.remainingQty > 0
-                          ? 'bg-red-100 text-red-800 border border-red-300'
-                          : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      }`}>
-                        {stats.daysUntilDeadline < 0
-                          ? `Lewat Deadline ${Math.abs(stats.daysUntilDeadline)} Hari`
-                          : `Batas Kirim: H-${stats.daysUntilDeadline} (${portalTask.estReturnDate})`}
-                      </span>
-                    )}
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+                      Deadline: {portalTask.estReturnDate}
+                    </span>
                   </div>
 
-                  {/* Summary Metrics: Clean Input Summary for SUBCON vs Analytical Metrics for PE */}
-                  {currentUser.role === 'SUBCON' ? (
-                    <div className="grid grid-cols-3 gap-2.5 text-xs">
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block">Total Order SPK</span>
-                        <strong className="text-sm font-black text-slate-900">
-                          {portalTask.quantitySend.toLocaleString()} {portalTask.unit}
-                        </strong>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">
-                          Target Harian: {stats.dailyTarget} Pcs/Hr
-                        </span>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block">Total Sudah Diinput</span>
-                        <strong className="text-sm font-black text-cyan-700">
-                          {stats.totalCompleted.toLocaleString()} Pcs
-                        </strong>
-                        <span className="text-[10px] text-cyan-700 font-bold block mt-0.5">
-                          {stats.progressPercent}% Terkumpul
-                        </span>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block">Sisa Order</span>
-                        <strong className="text-sm font-black text-slate-900">
-                          {stats.remainingQty.toLocaleString()} Pcs
-                        </strong>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">
-                          {stats.logs.length} Hari Diinput
-                        </span>
-                      </div>
+                  {/* Summary Metrics */}
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                      <span className="text-[10px] text-slate-500 block">Order SPK</span>
+                      <strong className="text-sm font-bold text-slate-900 tabular-nums">
+                        {portalTask.quantitySend.toLocaleString()} {portalTask.unit}
+                      </strong>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block">Progress Kumulatif</span>
-                        <strong className="text-sm font-black text-slate-900">
-                          {stats.totalCompleted.toLocaleString()} / {portalTask.quantitySend.toLocaleString()}
-                        </strong>
-                        <span className="text-[10px] text-cyan-700 font-bold block mt-0.5">
-                          {stats.progressPercent}% Selesai
-                        </span>
-                      </div>
 
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block">Rata-rata Aktual/Hari</span>
-                        <strong className={`text-sm font-black ${
-                          stats.avgActualDaily < stats.dailyTarget ? 'text-red-600' : 'text-emerald-700'
-                        }`}>
-                          {stats.avgActualDaily} Pcs/Hr
-                        </strong>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">
-                          Target: {stats.dailyTarget} Pcs/Hr
-                        </span>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block">Target Kejar Sisa Waktu</span>
-                        <strong className="text-sm font-black text-amber-700">
-                          {stats.requiredDailyRate} Pcs/Hr
-                        </strong>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">
-                          Sisa: {stats.remainingQty.toLocaleString()} Pcs
-                        </span>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block">Prediksi Selesai</span>
-                        <strong className={`text-sm font-black ${
-                          stats.projectedDelayDays > 0 ? 'text-red-600' : 'text-emerald-700'
-                        }`}>
-                          {stats.projectedDelayDays > 0 ? `Telat +${stats.projectedDelayDays} Hr` : 'Tepat Waktu'}
-                        </strong>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">
-                          Est: {stats.projectedFinishDateStr}
-                        </span>
-                      </div>
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                      <span className="text-[10px] text-slate-500 block">Selesai</span>
+                      <strong className="text-sm font-bold text-cyan-700 tabular-nums">
+                        {stats.totalCompleted.toLocaleString()} ({stats.progressPercent}%)
+                      </strong>
                     </div>
-                  )}
 
-                  {/* Visual Progress Bar */}
-                  <div>
-                    <div className="flex justify-between text-xs font-bold mb-1">
-                      <span className="text-slate-700">Progress Penyelesaian Target SPK</span>
-                      <span className="text-cyan-800">{stats.progressPercent}% ({stats.totalCompleted} Pcs)</span>
-                    </div>
-                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                      <div
-                        className={`h-full transition-all duration-300 ${
-                          currentUser.role !== 'SUBCON' && stats.warningMatch ? 'bg-amber-500' : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${stats.progressPercent}%` }}
-                      />
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                      <span className="text-[10px] text-slate-500 block">Sisa</span>
+                      <strong className="text-sm font-bold text-slate-900 tabular-nums">
+                        {stats.remainingQty.toLocaleString()} Pcs
+                      </strong>
                     </div>
                   </div>
 
                   {/* Daily Log Table */}
-                  <div className="space-y-2">
-                    <div className="text-xs font-black text-slate-800 flex items-center justify-between">
-                      <span>Riwayat Input Harian oleh Akun Subkon ({stats.logs.length} Hari Tercatat)</span>
-                    </div>
-
-                    {stats.logs.length > 0 ? (
-                      <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-100 text-slate-700 font-bold text-[11px] border-b border-slate-200">
-                              <th className="py-2.5 px-3">Tanggal</th>
-                              <th className="py-2.5 px-3 text-right">Target</th>
-                              <th className="py-2.5 px-3 text-right">Aktual OK</th>
-                              <th className="py-2.5 px-3 text-center">% Capai</th>
-                              <th className="py-2.5 px-3 text-right">Reject</th>
-                              <th className="py-2.5 px-3">Status &amp; Kendala Dilaporkan</th>
-                              <th className="py-2.5 px-2 text-center">Hapus</th>
+                  {stats.logs.length > 0 ? (
+                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 text-slate-600 font-semibold text-[11px] border-b border-slate-200">
+                            <th className="py-2 px-3">Tanggal</th>
+                            <th className="py-2 px-3 text-right">Target</th>
+                            <th className="py-2 px-3 text-right">Aktual</th>
+                            <th className="py-2 px-3 text-right">Reject</th>
+                            <th className="py-2 px-3">Catatan</th>
+                            <th className="py-2 px-2 text-center"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {stats.logs.map((log) => (
+                            <tr key={log.id} className={log.hasIssue ? 'bg-red-50/40' : 'hover:bg-slate-50'}>
+                              <td className="py-2 px-3 font-semibold text-slate-900 whitespace-nowrap">{log.date}</td>
+                              <td className="py-2 px-3 text-right text-slate-500 tabular-nums">{log.targetPcs}</td>
+                              <td className="py-2 px-3 text-right font-bold text-slate-900 tabular-nums">{log.actualOutputPcs}</td>
+                              <td className="py-2 px-3 text-right font-semibold text-rose-600 tabular-nums">
+                                {log.rejectPcs > 0 ? log.rejectPcs : '-'}
+                              </td>
+                              <td className="py-2 px-3">
+                                {log.hasIssue ? (
+                                  <span className="text-[11px] text-red-700 font-semibold">
+                                    {log.issueCategory}: {log.issueNotes}
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] text-emerald-700">Lancar</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-2 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSubconDailyLog(portalTask.id, log.id)}
+                                  className="p-1 text-slate-400 hover:text-red-600 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {stats.logs.map((log) => {
-                              const pct = log.targetPcs > 0 ? Math.round((log.actualOutputPcs / log.targetPcs) * 100) : 100;
-                              return (
-                                <tr key={log.id} className={log.hasIssue ? 'bg-red-50/50' : 'hover:bg-slate-50'}>
-                                  <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">{log.date}</td>
-                                  <td className="py-2.5 px-3 text-right text-slate-600 font-medium">{log.targetPcs}</td>
-                                  <td className="py-2.5 px-3 text-right font-black text-slate-900">{log.actualOutputPcs}</td>
-                                  <td className="py-2.5 px-3 text-center">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                      pct >= 100
-                                        ? 'bg-emerald-100 text-emerald-800'
-                                        : pct >= 80
-                                        ? 'bg-amber-100 text-amber-800'
-                                        : 'bg-red-100 text-red-800'
-                                    }`}>
-                                      {pct}%
-                                    </span>
-                                  </td>
-                                  <td className="py-2.5 px-3 text-right font-bold text-rose-600">
-                                    {log.rejectPcs > 0 ? log.rejectPcs : '-'}
-                                  </td>
-                                  <td className="py-2.5 px-3">
-                                    {log.hasIssue ? (
-                                      <div>
-                                        <span className="text-[10px] font-black text-red-700 bg-red-100 px-1.5 py-0.5 rounded">
-                                          ⚠️ {log.issueCategory}
-                                        </span>
-                                        <p className="text-[11px] text-red-900 mt-0.5">{log.issueNotes}</p>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[11px] text-emerald-700 font-semibold">
-                                        ✅ Lancar ({log.issueNotes || 'Normal'})
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="py-2.5 px-2 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => deleteSubconDailyLog(portalTask.id, log.id)}
-                                      className="p-1 text-slate-400 hover:text-red-600 cursor-pointer"
-                                      title="Hapus baris log harian"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-6 text-center bg-slate-50 rounded-xl border border-slate-200 text-slate-400 text-xs">
-                        Belum ada input data harian dari subkon untuk SPK ini. Silakan isi form di sebelah kiri.
-                      </div>
-                    )}
-                  </div>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-5 text-center bg-slate-50 rounded-lg border border-slate-200 text-slate-400 text-xs">
+                      Belum ada input harian.
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -1199,26 +936,22 @@ export const SubcontractorManager: React.FC = () => {
       {viewMode === 'MONITORING' && (
         <>
           {/* Filter Tabs Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-              <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 mr-1">
-                <Filter className="w-3.5 h-3.5 text-cyan-700" />
-                Filter:
-              </span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto">
               <button
                 onClick={() => setFilterTab('ALL')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                  filterTab === 'ALL' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  filterTab === 'ALL' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                Semua SPK ({subconTasks.length})
+                Semua ({subconTasks.length})
               </button>
               <button
                 onClick={() => setFilterTab('WARNING_H3')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${
                   filterTab === 'WARNING_H3'
                     ? 'bg-red-600 text-white'
-                    : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                    : 'text-red-700 hover:bg-red-50'
                 }`}
               >
                 <AlertTriangle className="w-3 h-3" />
@@ -1226,50 +959,46 @@ export const SubcontractorManager: React.FC = () => {
               </button>
               <button
                 onClick={() => setFilterTab('WIP')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                  filterTab === 'WIP' ? 'bg-cyan-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  filterTab === 'WIP' ? 'bg-cyan-800 text-white' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                Sedang Jalan ({activeWIPCount})
+                Aktif ({activeWIPCount})
               </button>
               <button
                 onClick={() => setFilterTab('DISCREPANCY')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   filterTab === 'DISCREPANCY'
                     ? 'bg-amber-600 text-white'
-                    : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+                    : 'text-amber-800 hover:bg-amber-50'
                 }`}
               >
-                Ketidaksesuaian QC ({discrepancyCount})
+                QC ({discrepancyCount})
               </button>
               <button
                 onClick={() => setFilterTab('COMPLETED')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                  filterTab === 'COMPLETED' ? 'bg-emerald-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  filterTab === 'COMPLETED' ? 'bg-emerald-700 text-white' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 Selesai ({completedCount})
               </button>
             </div>
-
-            <div className="text-xs text-slate-500 shrink-0">
-              Menampilkan <strong>{filteredTasks.length}</strong> SPK Subkon
-            </div>
           </div>
 
-          {/* Subcon Tasks Table with Daily Target Analysis & Dedicated Account Info */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          {/* Subcon Tasks Table */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 text-[11px]">
-                    <th className="py-3 px-3">Rekanan Subkon &amp; Akun Akses</th>
-                    <th className="py-3 px-3">Style &amp; Jasa</th>
-                    <th className="py-3 px-3 text-right">Target SPK</th>
-                    <th className="py-3 px-3 bg-cyan-50/60 text-cyan-950">Analisis Target Harian</th>
-                    <th className="py-3 px-3">Jadwal &amp; Countdown H-3</th>
-                    <th className="py-3 px-3">Status, Warning &amp; QC</th>
-                    <th className="py-3 px-3 text-center">Aksi &amp; Analisis</th>
+                  <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 text-[11px]">
+                    <th className="py-2.5 px-3.5">Mitra Subkon</th>
+                    <th className="py-2.5 px-3.5">Style &amp; Jasa</th>
+                    <th className="py-2.5 px-3.5 text-right">Progres Pcs</th>
+                    <th className="py-2.5 px-3.5">Target Harian</th>
+                    <th className="py-2.5 px-3.5">Deadline</th>
+                    <th className="py-2.5 px-3.5">Status</th>
+                    <th className="py-2.5 px-3.5 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1279,166 +1008,102 @@ export const SubcontractorManager: React.FC = () => {
                     const actionBadge = getActionBadge(task.discrepancyAction);
 
                     return (
-                      <tr key={task.id} className={`transition-colors ${stats.warningMatch ? 'bg-red-50/25 hover:bg-red-50/50' : 'hover:bg-slate-50/80'}`}>
+                      <tr key={task.id} className={`transition-colors ${stats.warningMatch ? 'bg-red-50/20 hover:bg-red-50/40' : 'hover:bg-slate-50/70'}`}>
                         {/* Subcon Name & Dedicated Account */}
-                        <td className="py-3.5 px-3 align-top">
-                          <div className="font-black text-slate-900 text-xs">{task.subconName}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{task.id} • PIC: {task.picSubcon}</div>
+                        <td className="py-3 px-3.5 align-top">
+                          <div className="font-bold text-slate-900 text-xs">{task.subconName}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">{task.id}</div>
                           {task.subconUsername && (
-                            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 text-[10px]">
-                              <KeyRound className="w-3 h-3 text-cyan-700 shrink-0" />
-                              <span className="font-mono text-slate-700">
-                                Akun: <strong>{task.subconUsername}</strong>
-                              </span>
-                              <button
-                                onClick={() => handleQuickSwitchToSubcon(task)}
-                                className="ml-1 px-1.5 py-0.5 rounded bg-cyan-700 hover:bg-cyan-800 text-white font-bold cursor-pointer"
-                                title="Masuk / Simulasi sebagai akun subkon ini untuk input data harian"
-                              >
-                                Masuk Akun
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => handleQuickSwitchToSubcon(task)}
+                              className="mt-1 inline-flex items-center gap-1 text-[11px] text-cyan-700 hover:underline font-semibold cursor-pointer"
+                            >
+                              <KeyRound className="w-3 h-3" />
+                              <span>@{task.subconUsername}</span>
+                            </button>
                           )}
                         </td>
 
                         {/* Style & Service Type */}
-                        <td className="py-3.5 px-3 align-top">
-                          <div className="font-black text-indigo-700 font-mono">{task.styleCode}</div>
-                          <span className="mt-1 px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-800 border border-cyan-200 font-semibold text-[10px] inline-block">
-                            {task.type}
-                          </span>
-                          <div className="text-[10px] text-slate-500 mt-1">
+                        <td className="py-3 px-3.5 align-top">
+                          <div className="font-bold text-indigo-700 font-mono">{task.styleCode}</div>
+                          <div className="text-[11px] text-slate-600">{task.type}</div>
+                          <div className="text-[11px] text-slate-400 tabular-nums">
                             Rp {task.totalCost.toLocaleString('id-ID')}
                           </div>
                         </td>
 
                         {/* Target SPK & Progress */}
-                        <td className="py-3.5 px-3 text-right align-top">
-                          <div className="font-black text-slate-900">{task.quantitySend.toLocaleString()} Pcs</div>
-                          <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
-                            Selesai: {stats.totalCompleted.toLocaleString()} Pcs
+                        <td className="py-3 px-3.5 text-right align-top tabular-nums">
+                          <div className="font-bold text-slate-900">
+                            {stats.totalCompleted.toLocaleString()} / {task.quantitySend.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-amber-700 font-semibold">
-                            Sisa: {stats.remainingQty.toLocaleString()} Pcs
-                          </div>
-                          <div className="w-24 ml-auto h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1">
-                            <div
-                              className={`h-full ${stats.warningMatch ? 'bg-red-500' : 'bg-emerald-500'}`}
-                              style={{ width: `${stats.progressPercent}%` }}
-                            />
+                          <div className="text-[11px] text-slate-500">
+                            Sisa {stats.remainingQty.toLocaleString()} pcs ({stats.progressPercent}%)
                           </div>
                         </td>
 
                         {/* Daily Target Analysis Column */}
-                        <td className="py-3.5 px-3 bg-cyan-50/30 align-top">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] text-slate-500">Target Harian:</span>
-                            <strong className="font-black text-slate-900">{stats.dailyTarget} Pcs/hr</strong>
+                        <td className="py-3 px-3.5 align-top tabular-nums">
+                          <div className="font-semibold text-slate-900">
+                            Aktual: <span className={stats.avgActualDaily < stats.dailyTarget ? 'text-red-600' : 'text-emerald-700'}>{stats.avgActualDaily}</span> / {stats.dailyTarget} pcs
                           </div>
-                          <div className="flex items-center justify-between gap-2 mt-0.5">
-                            <span className="text-[10px] text-slate-500">Rata-rata Aktual:</span>
-                            <strong className={`font-black ${
-                              stats.avgActualDaily === 0
-                                ? 'text-slate-400'
-                                : stats.avgActualDaily < stats.dailyTarget
-                                ? 'text-red-600'
-                                : 'text-emerald-700'
-                            }`}>
-                              {stats.avgActualDaily > 0 ? `${stats.avgActualDaily} Pcs/hr` : 'Belum Input'}
-                            </strong>
-                          </div>
-                          <div className="mt-1.5 flex items-center justify-between text-[10px] pt-1 border-t border-cyan-100">
-                            <span className="text-slate-500">{stats.logs.length} log harian</span>
+                          <div className="text-[11px] text-slate-500">
                             {stats.projectedDelayDays > 0 && !isCompleted ? (
-                              <span className="text-red-700 font-bold">Prediksi +{stats.projectedDelayDays} hr</span>
+                              <span className="text-red-600 font-semibold">Prediksi +{stats.projectedDelayDays} hr</span>
                             ) : (
-                              <span className="text-emerald-700 font-bold">On-Track</span>
+                              <span className="text-emerald-600">Tepat Waktu</span>
                             )}
                           </div>
                         </td>
 
                         {/* Schedule & H-3 Countdown */}
-                        <td className="py-3.5 px-3 align-top text-[11px]">
-                          <div className="text-slate-500">Kirim: {task.sendDate}</div>
-                          <div className="font-bold text-slate-900">Deadline: {task.estReturnDate}</div>
+                        <td className="py-3 px-3.5 align-top text-xs tabular-nums">
+                          <div className="font-semibold text-slate-900">{task.estReturnDate}</div>
                           {!isCompleted && (
-                            <div className="mt-1">
-                              {stats.daysUntilDeadline < 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-red-600 text-white font-black text-[10px]">
-                                  Lewat {Math.abs(stats.daysUntilDeadline)} Hari
-                                </span>
-                              ) : stats.daysUntilDeadline <= 3 ? (
-                                <span className="px-2 py-0.5 rounded bg-red-600 text-white font-black text-[10px] animate-pulse">
-                                  ⚠️ Warning H-{stats.daysUntilDeadline}
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px]">
-                                  Sisa {stats.daysUntilDeadline} Hari
-                                </span>
-                              )}
+                            <div className={`text-[11px] font-bold ${
+                              stats.daysUntilDeadline <= 3 ? 'text-red-600' : 'text-slate-500'
+                            }`}>
+                              {stats.daysUntilDeadline < 0
+                                ? `Telat ${Math.abs(stats.daysUntilDeadline)} hr`
+                                : `H-${stats.daysUntilDeadline}`}
                             </div>
                           )}
                         </td>
 
                         {/* Status, Early Warning & QC */}
-                        <td className="py-3.5 px-3 align-top max-w-xs">
-                          <div className="flex flex-wrap items-center gap-1">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              isCompleted ? 'bg-emerald-100 text-emerald-800' :
-                              task.status === 'Partial Received' ? 'bg-cyan-100 text-cyan-800' :
-                              task.status === 'Delayed' ? 'bg-red-100 text-red-800' :
-                              'bg-amber-100 text-amber-800'
-                            }`}>
-                              {task.status}
-                            </span>
-
-                            {task.hasDiscrepancy && actionBadge && (
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${actionBadge.color}`}>
-                                {actionBadge.icon}
-                                <span>{actionBadge.label}</span>
-                              </span>
-                            )}
-                          </div>
-
-                          {stats.warningMatch?.latestIssue && (
-                            <div className="mt-1.5 p-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] text-red-900">
-                              <strong>Kendala Subkon ({stats.warningMatch.latestIssue.date}):</strong> {stats.warningMatch.latestIssue.notes}
-                            </div>
-                          )}
-
-                          {task.hasDiscrepancy && task.discrepancyNotes && (
-                            <div className="mt-1 text-[10px] text-amber-800 bg-amber-50 p-1.5 rounded border border-amber-200">
-                              <strong>QC:</strong> {task.discrepancyNotes}
+                        <td className="py-3 px-3.5 align-top">
+                          <div className="font-semibold text-slate-800">{task.status}</div>
+                          {task.hasDiscrepancy && actionBadge && (
+                            <div className="text-[11px] text-amber-700 font-semibold mt-0.5">
+                              {actionBadge.label}
                             </div>
                           )}
                         </td>
 
                         {/* Actions */}
-                        <td className="py-3.5 px-3 text-center align-top">
-                          <div className="flex flex-col gap-1.5 items-center">
+                        <td className="py-3 px-3.5 text-center align-top">
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => setAnalyzingTaskId(task.id)}
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                              className="px-2 py-1 rounded bg-slate-900 hover:bg-black text-white font-semibold text-[11px] cursor-pointer"
                             >
-                              <BarChart3 className="w-3 h-3 text-cyan-400" />
-                              <span>Analisis Harian</span>
+                              Analisis
                             </button>
                             <button
                               onClick={() => {
                                 setSelectedPortalTaskId(task.id);
                                 setViewMode('SUBCON_PORTAL');
                               }}
-                              className="w-full px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-900 border border-cyan-300 font-bold text-[10px] flex items-center justify-center gap-1 cursor-pointer"
+                              className="px-2 py-1 rounded bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-semibold text-[11px] cursor-pointer"
                             >
-                              <Activity className="w-3 h-3 text-cyan-700" />
-                              <span>+ Input Harian</span>
+                              Input
                             </button>
                             <button
                               onClick={() => handleOpenEdit(task)}
-                              className="w-full px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] flex items-center justify-center gap-1 cursor-pointer"
+                              className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] cursor-pointer"
                             >
-                              <Edit3 className="w-3 h-3" />
-                              <span>Evaluasi QC</span>
+                              QC
                             </button>
                           </div>
                         </td>

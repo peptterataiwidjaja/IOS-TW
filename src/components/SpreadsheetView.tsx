@@ -227,146 +227,97 @@ export const SpreadsheetView: React.FC = () => {
     <div className="space-y-4">
       
       {/* Spreadsheet Header Toolbar */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1 border border-emerald-200">
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
-                Spreadsheet Report Engine
-              </span>
-              <span className="text-xs text-slate-400 font-medium">• Pelaporan Spreed Sheet Terpadu</span>
-            </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Pelaporan Spreed Sheet &amp; Ekspor Buku Kerja Excel (.xlsx)
-            </h1>
-            <p className="text-xs text-slate-600 mt-0.5 max-w-3xl">
-              Tampilan spreadsheet interaktif untuk memeriksa inventori, audit mutasi PIC, alur SOP PE, dan mutasi arus kas pabrik PT Teratai Widjaja secara transparan.
-            </p>
-          </div>
+      <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h1 className="text-base font-bold text-slate-900">
+            Tabel Data &amp; Ekspor Excel
+          </h1>
 
           {/* Export & Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Cari data..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="pl-8 pr-3 py-1.5 bg-white rounded-lg border border-slate-200 text-xs w-44 focus:outline-none focus:border-emerald-600"
+              />
+            </div>
+
             <button
               onClick={handleCopyClipboard}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
-              title="Salin Data Tabel ke Clipboard"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Tersalin!' : 'Salin Data'}</span>
+              <span>{copied ? 'Tersalin' : 'Salin'}</span>
             </button>
 
             <button
               onClick={() => openPrintModal('spreadsheet')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
-              title="Cetak PDF Dokumen Lembar Kerja Spreadsheet (Hitam Putih)"
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+              title="Cetak PDF"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Cetak PDF</span>
+              <Printer className="w-4 h-4" />
             </button>
 
             <button
               onClick={() => setIsGoogleScriptModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
-              title="Koneksi Google Spreadsheet & Salin Kode Google Apps Script (Code.gs)"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold transition-colors cursor-pointer"
             >
               <Code2 className="w-3.5 h-3.5" />
-              <span>Kode Google Script (Code.gs)</span>
+              <span>Google Sheet</span>
             </button>
 
             <button
               onClick={handleExportFullExcel}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-xs transition-colors"
-              title="Download File Excel Lengkap dengan Semua Sheet"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors cursor-pointer"
             >
-              <FileDown className="w-4 h-4" />
-              <span>Download Excel (.xlsx)</span>
+              <FileDown className="w-3.5 h-3.5" />
+              <span>Excel (.xlsx)</span>
             </button>
           </div>
         </div>
 
-        {/* Formula Bar Simulation */}
-        <div className="mt-4 flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs">
-          <div className="px-2.5 py-1 bg-white font-mono font-bold text-slate-700 rounded border border-slate-300 shadow-2xs">
-            {selectedCell ? `${getColLetter(selectedCell.col)}${selectedCell.row + 1}` : 'A1'}
-          </div>
-          <div className="font-mono text-slate-400 font-bold px-1 select-none">
-            fx
-          </div>
-          <input
-            type="text"
-            readOnly
-            value={selectedCell ? selectedCell.val : ''}
-            className="flex-1 bg-white px-3 py-1 rounded border border-slate-200 font-mono text-slate-800 text-xs focus:outline-none"
-            placeholder="Pilih sel pada spreadsheet untuk melihat nilai..."
-          />
-          <div className="relative w-64">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
-            <input
-              type="text"
-              placeholder="Filter teks lembar kerja..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full pl-8 pr-3 py-1 bg-white rounded border border-slate-200 text-xs font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-            />
-          </div>
+        {/* Spreadsheet Tabs Selector */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg overflow-x-auto text-xs w-fit max-w-full">
+          {[
+            { id: 'STOCK', label: 'Stok Gudang', count: stock.length },
+            { id: 'MUTATION', label: 'Mutasi', count: transactions.length },
+            { id: 'WORKFLOW', label: 'SOP PE', count: currentStyle.steps.length },
+            { id: 'PPIC_PLANNING', label: 'Komponen PPIC', count: componentAllocations.length },
+            { id: 'SUBCON', label: 'Subkon', count: subconTasks.length },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveSheet(tab.id as SheetType);
+                setSelectedCell(null);
+              }}
+              className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeSheet === tab.id
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className="text-[10px] text-slate-400 tabular-nums">({tab.count})</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Spreadsheet Tabs Selector */}
-      <div className="flex items-center gap-1 bg-slate-900 p-1.5 rounded-2xl overflow-x-auto shadow-xs text-xs">
-        {[
-          { id: 'STOCK', label: '📊 1. Stok_Bahan_Gudang_Style', count: stock.length },
-          { id: 'MUTATION', label: '🚚 2. Mutasi_dan_PIC_TanggungJawab', count: transactions.length },
-          { id: 'WORKFLOW', label: '📋 3. SOP_Workflow_PE_Teratai', count: currentStyle.steps.length },
-          { id: 'PPIC_PLANNING', label: '🧩 4. Alokasi_Komponen_PPIC', count: componentAllocations.length },
-          { id: 'SUBCON', label: '🧵 5. Monitoring_Subkon_Mitra', count: subconTasks.length },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setActiveSheet(tab.id as SheetType);
-              setSelectedCell(null);
-            }}
-            className={`px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeSheet === tab.id
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <span>{tab.label}</span>
-            <span className="text-[10px] bg-black/30 px-1.5 py-0.2 rounded-full font-mono">
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
       {/* Spreadsheet Data Grid */}
-      <div className="bg-white rounded-2xl border border-slate-300 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto max-h-[600px] scrollbar-thin">
           <table className="w-full text-left text-xs border-collapse font-sans">
-            
-            {/* Column coordinate row (A, B, C, D...) */}
-            <thead className="sticky top-0 z-20 bg-slate-100 border-b border-slate-300">
-              <tr className="bg-slate-200/90 text-slate-500 text-[10px] font-mono select-none">
-                <th className="py-1 px-2 text-center w-12 bg-slate-300/80 border-r border-slate-300">
-                  #
-                </th>
-                {currentSheetData.headers.map((_, colIdx) => (
-                  <th key={colIdx} className="py-1 px-3 text-center border-r border-slate-300 font-bold">
-                    {getColLetter(colIdx)}
-                  </th>
-                ))}
-              </tr>
-              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
-                <th className="py-2 px-2 text-center bg-slate-200 border-r border-slate-300 text-[11px]">
-                  &bull;
-                </th>
+            <thead className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+              <tr className="text-slate-600 font-semibold text-[11px]">
                 {currentSheetData.headers.map((header, colIdx) => (
                   <th 
                     key={colIdx} 
-                    className="py-2 px-3 border-r border-slate-300 whitespace-nowrap text-slate-800 tracking-tight"
+                    className="py-2.5 px-3 border-r border-slate-200 whitespace-nowrap"
                   >
                     {header}
                   </th>
@@ -374,17 +325,9 @@ export const SpreadsheetView: React.FC = () => {
               </tr>
             </thead>
 
-            {/* Rows */}
-            <tbody className="divide-y divide-slate-200 font-mono text-[11px]">
+            <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
               {currentSheetData.rows.map((row, rowIdx) => (
-                <tr key={rowIdx} className="hover:bg-indigo-50/40 transition-colors">
-                  
-                  {/* Row Number Coordinate */}
-                  <td className="py-2 px-2 text-center bg-slate-100 text-slate-500 font-mono font-bold select-none border-r border-slate-300 text-[10px]">
-                    {rowIdx + 1}
-                  </td>
-
-                  {/* Cell values */}
+                <tr key={rowIdx} className="hover:bg-slate-50 transition-colors">
                   {row.map((cellVal: any, colIdx: number) => {
                     const isSelected = selectedCell?.row === rowIdx && selectedCell?.col === colIdx;
                     const isNumeric = typeof cellVal === 'number';
@@ -393,11 +336,11 @@ export const SpreadsheetView: React.FC = () => {
                       <td
                         key={colIdx}
                         onClick={() => setSelectedCell({ row: rowIdx, col: colIdx, val: String(cellVal) })}
-                        className={`py-2 px-3 border-r border-slate-200 whitespace-nowrap cursor-cell transition-all ${
+                        className={`py-2 px-3 border-r border-slate-100 whitespace-nowrap cursor-cell tabular-nums ${
                           isNumeric ? 'text-right' : 'text-left'
                         } ${
                           isSelected 
-                            ? 'bg-emerald-100/70 ring-2 ring-emerald-600 font-bold text-slate-900 z-10 relative' 
+                            ? 'bg-emerald-50 ring-1 ring-emerald-600 font-bold text-slate-900' 
                             : 'text-slate-800'
                         }`}
                       >
@@ -407,28 +350,11 @@ export const SpreadsheetView: React.FC = () => {
                       </td>
                     );
                   })}
-
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
-
-        {/* Footer status */}
-        <div className="p-3 bg-slate-100 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-600 gap-2">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-slate-800 font-mono">
-              SHEET: {currentSheetData.title}
-            </span>
-            <span>• {currentSheetData.rows.length} Baris Data</span>
-          </div>
-
-          <div className="text-[11px] text-slate-500">
-            Format kompatibel dengan Microsoft Excel (.xlsx), Google Sheets, dan LibreOffice Calc.
-          </div>
-        </div>
-
       </div>
 
     </div>

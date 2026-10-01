@@ -297,3 +297,94 @@ export interface SubcontractorTask {
   discrepancyQty?: number;
   picQC?: string;
 }
+
+export type CuttingQueueStatus =
+  | 'ACTIVE_CUTTING'     // Sedang Dipotong Hari Ini
+  | 'WAITING_LIST'       // Antrian Waiting List
+  | 'READY_FOR_LOADING'  // Selesai Potong - Siap Loading ke Line/Subkon
+  | 'LOADED'             // Sudah Di-loading ke Line/Subkon
+  | 'HOLD_SOP';          // Ditahan Sementara - SOP Belum Sesuai
+
+export interface CuttingLoadingAllocation {
+  id: string;
+  destinationType: 'LINE' | 'SUBCON';
+  destinationName: string; // Misal: "Line 1 Sewing (In-House)", "Line 2 Sewing", "CV Prima Bordir Mandiri (Subkon)"
+  componentPanel: string; // Misal: "Body Utama, Lengan & Kerah", "Panel Dada Kiri (Bordir)"
+  dailyTargetRequirementPcs: number; // Kebutuhan target harian Line / Subkon (Pcs/Hari)
+  allocatedLoadingPcs: number; // Kuantitas potongan yang dialokasikan untuk di-load
+  loadedActualPcs: number; // Kuantitas aktual yang sudah di-load ke Line / Subkon
+  loadingStatus: 'Waiting Cut' | 'Ready to Load' | 'Partial Loaded' | 'Loaded';
+  picReceiver: string; // SPV Line / PIC Subkon penerima loading
+  notes?: string;
+}
+
+export interface CuttingOrderItem {
+  id: string;
+  orderNumber: string; // Nomor SPK Potong, misal: "SPK-CUT/TW/09/001"
+  cuttingDate: string; // Tanggal Perintah Potong (YYYY-MM-DD)
+  queueNumber: number; // Nomor urut sistem antrian waiting list
+  queueStatus: CuttingQueueStatus;
+  priority: 'URGENT' | 'HIGH' | 'NORMAL';
+  cuttingTable: string; // Misal: "Meja Potong 01 (Bandknife)", "Meja Potong 02 (Straight Knife)"
+  styleId: string;
+  styleCode: string; // Model yang dipotong
+  styleName: string;
+  buyer: string;
+  // Acuan SOP & Model Berjalan
+  sopReferenceStepId: number; // Tahap SOP acuan (misal Step 10, 11, 12, 14)
+  sopReferenceProcess: string;
+  sopComplianceStatus: 'SESUAI_SOP' | 'PERHATIAN_SOP';
+  sopComplianceNotes: string;
+  // Bahan Baku yang Dipotong Berdasarkan SOP & BOM
+  materialCode: string;
+  materialName: string;
+  materialCategory: MaterialCategory | string;
+  fabricQtyToCut: number;
+  fabricUnit: string;
+  markerRatio: string; // Misal: "S:1, M:2, L:2, XL:1 (42 Ply)"
+  componentPanelCut: string; // Misal: "Body Depan, Belakang, Lengan & Kerah"
+  // Target Harian & Realisasi Potong
+  dailyTargetCutPcs: number;
+  actualCutPcs: number;
+  bundleCount: number;
+  // Peruntukan Loading ke Line Mana & Subkon Mana Sesuai Kebutuhan Target Harian
+  loadingAllocations: CuttingLoadingAllocation[];
+  picCutting: string;
+  issuedByPPIC: string;
+  notes?: string;
+}
+
+export interface SOPDeviationDetail {
+  stepId: number;
+  process: string;
+  picDept: string;
+  picName: string;
+  status: SOPWorkflowStep['status'];
+  dateScheduled: string;
+  actualDate?: string;
+  issueType: 'OVERDUE' | 'LATE_ACTUAL' | 'NEEDS_REVIEW' | 'BYPASSED_PREREQUISITE' | 'MACHINE_ISSUE';
+  description: string;
+  daysDelayed: number;
+}
+
+export interface StyleSOPAttentionItem {
+  styleId: string;
+  styleCode: string;
+  styleName: string;
+  buyer: string;
+  targetQuantityPcs: number;
+  deliveryDate: string;
+  styleStatus: ProductionStyle['status'];
+  currentWorkflowStep: number;
+  completedStepsCount: number;
+  totalStepsCount: number;
+  sopCompletionPercent: number;
+  severity: 'CRITICAL' | 'WARNING' | 'ATTENTION';
+  totalDeviations: number;
+  deviations: SOPDeviationDetail[];
+  materialShortageCount: number;
+  materialShortageNames: string[];
+  impactOnCuttingAndLine: string;
+  recommendedAction: string;
+}
+

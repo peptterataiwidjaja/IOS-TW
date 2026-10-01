@@ -8,13 +8,15 @@ import {
   CashFlowRecord, 
   SubcontractorTask,
   ProductionComponentAllocation,
-  ProductionMaterialRequirement
+  ProductionMaterialRequirement,
+  CuttingOrderItem
 } from '../types';
 
 export const ALL_NAV_TABS: NavTabPermission[] = [
   { id: 'new-style', label: 'Input Model Baru', description: 'Registrasi model/style produksi baru, target order, jadwal delivery & inisialisasi SOP/bahan' },
-  { id: 'pe-workflow', label: 'Alur SOP', description: 'Monitoring 14 tahap SOP PE, tanggal aktual, breakdown mesin' },
-  { id: 'ppic-planning', label: 'PPIC & BOM', description: 'Alokasi komponen produksi (Line vs Subkon) & kebutuhan bahan baku (BOM)' },
+  { id: 'pe-workflow', label: 'Alur SOP', description: 'Monitoring 18 tahap SOP PE, tanggal aktual, breakdown mesin' },
+  { id: 'ppic-planning', label: 'PPIC & Kontrol SOP', description: 'Bar Style Perhatian Belum Sesuai SOP, alokasi komponen (Line vs Subkon) & kebutuhan bahan baku (BOM)' },
+  { id: 'cutting', label: 'Cutting & Loading', description: 'Perintah potong harian per model & bahan sesuai SOP, antrian waiting list & loading ke Line/Subkon sesuai target harian' },
   { id: 'warehouse-stock', label: 'Stok Gudang', description: 'Katalog stok bahan baku, aksesoris, keranjang ambil barang & input stok' },
   { id: 'subcon', label: 'Mitra Subkon', description: 'Monitoring alur keluar-masuk subkon, portal input target harian & warning H-3' },
   { id: 'transactions', label: 'Riwayat Mutasi', description: 'Pelacakan mutasi barang & penanggung jawab PIC' },
@@ -36,6 +38,7 @@ export const INITIAL_USERS: UserAccount[] = [
       'new-style',
       'pe-workflow',
       'ppic-planning',
+      'cutting',
       'warehouse-stock',
       'subcon',
       'transactions',
@@ -54,6 +57,7 @@ export const INITIAL_USERS: UserAccount[] = [
     email: 'warehouse.tw@terataiwidjaja.co.id',
     allowedTabs: [
       'warehouse-stock',
+      'cutting',
       'transactions',
       'spreadsheet'
     ]
@@ -71,6 +75,7 @@ export const INITIAL_USERS: UserAccount[] = [
       'pe-workflow',
       'warehouse-stock',
       'ppic-planning',
+      'cutting',
       'subcon',
       'transactions',
       'spreadsheet',
@@ -87,8 +92,11 @@ export const INITIAL_USERS: UserAccount[] = [
     email: 'ppic@terataiwidjaja.co.id',
     allowedTabs: [
       'new-style',
+      'pe-workflow',
       'ppic-planning',
+      'cutting',
       'warehouse-stock',
+      'subcon',
       'transactions',
       'spreadsheet',
       'analytics'
@@ -105,9 +113,26 @@ export const INITIAL_USERS: UserAccount[] = [
     allowedTabs: [
       'pe-workflow',
       'ppic-planning',
+      'cutting',
       'subcon',
       'transactions',
       'spreadsheet'
+    ]
+  },
+  {
+    id: 'usr-cutting',
+    username: 'cutting_tw',
+    password: 'cutting123',
+    name: 'Dani (Leader Cutting)',
+    role: 'PRODUCTION',
+    department: 'Divisi Cutting & Bundling',
+    email: 'cutting@terataiwidjaja.co.id',
+    allowedTabs: [
+      'cutting',
+      'ppic-planning',
+      'pe-workflow',
+      'warehouse-stock',
+      'transactions'
     ]
   },
   {
@@ -391,12 +416,46 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     startDate: '2026-09-08',
     deliveryDate: '2026-10-10',
     status: 'Preparation',
-    currentWorkflowStep: 5,
-    steps: STANDARD_SOP_STEPS.map(s => ({
-      ...s,
-      status: s.id <= 5 ? 'Completed' : (s.id === 6 ? 'In Progress' : 'Pending'),
-      dateScheduled: '2026-09-08'
-    })),
+    currentWorkflowStep: 6,
+    steps: STANDARD_SOP_STEPS.map(s => {
+      if (s.id <= 4) {
+        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-09', actualDate: '2026-09-09' };
+      }
+      if (s.id === 5) {
+        return {
+          ...s,
+          status: 'Needs Review' as const,
+          dateScheduled: '2026-09-10',
+          actualDate: '2026-09-13',
+          notes: 'PERHATIAN SOP: Folder placket polo shirt belum presisi (selisih 2mm), mekanik wajib kalibrasi ulang sebelum Pilot Sample!',
+          machineBreakdownNotes: 'Mesin kansai placket Line 2 jarum loncat, sedang diservis mekanik.'
+        };
+      }
+      if (s.id === 6) {
+        return {
+          ...s,
+          status: 'In Progress' as const,
+          dateScheduled: '2026-09-11',
+          actualDate: '2026-09-14',
+          notes: 'Terlambat 3 hari dari jadwal SOP: Potongan 5 pcs pilot sample menunggu approval koreksi pola placket.'
+        };
+      }
+      if (s.id === 9) {
+        return {
+          ...s,
+          status: 'Pending' as const,
+          dateScheduled: '2026-09-13',
+          actualDate: '',
+          notes: 'PPM (Pre-Production Meeting) belum terlaksana padahal jadwal masuk antrian cutting sudah dekat.'
+        };
+      }
+      return {
+        ...s,
+        status: 'Pending' as const,
+        dateScheduled: '2026-09-15',
+        actualDate: ''
+      };
+    }),
     cuttingProgressPcs: 0,
     sewingProgressPcs: 0,
     qcPassedPcs: 0,
@@ -415,7 +474,8 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     currentWorkflowStep: 15,
     steps: STANDARD_SOP_STEPS.map(s => ({
       ...s,
-      status: s.id <= 14 ? 'Completed' : (s.id === 15 ? 'In Progress' : 'Pending')
+      status: s.id <= 14 ? 'Completed' : (s.id === 15 ? 'In Progress' : 'Pending'),
+      actualDate: s.id <= 14 ? s.dateScheduled : (s.id === 15 ? s.dateScheduled : '')
     })),
     cuttingProgressPcs: 2800,
     sewingProgressPcs: 1420,
@@ -433,10 +493,35 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     deliveryDate: '2026-10-20',
     status: 'Sample / PPS',
     currentWorkflowStep: 4,
-    steps: STANDARD_SOP_STEPS.map(s => ({
-      ...s,
-      status: s.id <= 3 ? 'Completed' : (s.id === 4 ? 'In Progress' : 'Pending')
-    })),
+    steps: STANDARD_SOP_STEPS.map(s => {
+      if (s.id <= 2) {
+        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-10', actualDate: '2026-09-10' };
+      }
+      if (s.id === 3) {
+        return {
+          ...s,
+          status: 'Needs Review' as const,
+          dateScheduled: '2026-09-11',
+          actualDate: '2026-09-14',
+          notes: 'PERHATIAN SOP: Material kain batik motif parang korporat belum lolos uji luntur (color fastness) di lab QC!'
+        };
+      }
+      if (s.id === 4) {
+        return {
+          ...s,
+          status: 'In Progress' as const,
+          dateScheduled: '2026-09-12',
+          actualDate: '',
+          notes: 'PPS tertunda 2 hari karena matching motif saku depan belum simetris sesuai SOP.'
+        };
+      }
+      return {
+        ...s,
+        status: 'Pending' as const,
+        dateScheduled: '2026-09-16',
+        actualDate: ''
+      };
+    }),
     cuttingProgressPcs: 0,
     sewingProgressPcs: 0,
     qcPassedPcs: 0,
@@ -1447,4 +1532,300 @@ export const INITIAL_PPIC_MATERIALS: ProductionMaterialRequirement[] = [
     notes: 'Dialokasikan dan dikirim ke subkon sablon.'
   }
 ];
+
+export const INITIAL_CUTTING_ORDERS: CuttingOrderItem[] = [
+  {
+    id: 'CUT-2026-001',
+    orderNumber: 'SPK-CUT/TW/09/001',
+    cuttingDate: new Date().toISOString().split('T')[0],
+    queueNumber: 1,
+    queueStatus: 'ACTIVE_CUTTING',
+    priority: 'URGENT',
+    cuttingTable: 'Meja Potong 01 (Bandknife Utama)',
+    styleId: 'sty-01',
+    styleCode: 'TW-JKT-88',
+    styleName: 'Executive Safari Jacket Navy',
+    buyer: 'PT Mitra Megah Garment Corp',
+    sopReferenceStepId: 12,
+    sopReferenceProcess: 'Tahap 12 SOP: Gelar dan Potong Material (Setelah Step 10 Marker & Step 11 Kirim Kain)',
+    sopComplianceStatus: 'SESUAI_SOP',
+    sopComplianceNotes: 'SOP Step 1 s/d 11 Terverifikasi Selesai. Kain telah resting 24 jam & rasio marker 42 ply disetujui PE.',
+    materialCode: 'FAB-TW88-01',
+    materialName: 'Kain Cotton Twill 20x10 Navy Blue / Parasut Taslan Milky',
+    materialCategory: 'Kain Utama (Fabric)',
+    fabricQtyToCut: 1155,
+    fabricUnit: 'Yard',
+    markerRatio: 'S:1, M:2, L:2, XL:1 (Gelaran 42 Ply / 7.2m)',
+    componentPanelCut: 'Body Depan & Belakang, Lengan Raglan, Panel Dada Bordir & Punggung Sablon',
+    dailyTargetCutPcs: 700,
+    actualCutPcs: 520,
+    bundleCount: 28,
+    loadingAllocations: [
+      {
+        id: 'LOAD-001A',
+        destinationType: 'LINE',
+        destinationName: 'Line 1 Sewing (In-House)',
+        componentPanel: 'Body Utama Depan/Belakang & Kerah',
+        dailyTargetRequirementPcs: 400,
+        allocatedLoadingPcs: 400,
+        loadedActualPcs: 320,
+        loadingStatus: 'Partial Loaded',
+        picReceiver: 'Supardi (SPV Line 1)',
+        notes: 'Supply prioritas pagi untuk menjaga target 400 pcs/hari di Line 1'
+      },
+      {
+        id: 'LOAD-001B',
+        destinationType: 'LINE',
+        destinationName: 'Line 2 Sewing (In-House)',
+        componentPanel: 'Lengan Kiri/Kanan & Manset',
+        dailyTargetRequirementPcs: 300,
+        allocatedLoadingPcs: 300,
+        loadedActualPcs: 200,
+        loadingStatus: 'Partial Loaded',
+        picReceiver: 'Rudi (Leader Line 2)',
+        notes: 'Loading bertahap per 10 bundle'
+      },
+      {
+        id: 'LOAD-001C',
+        destinationType: 'SUBCON',
+        destinationName: 'CV Prima Bordir Mandiri (Subkon)',
+        componentPanel: 'Panel Dada Kiri (Aplikasi Bordir Logo 6 Warna)',
+        dailyTargetRequirementPcs: 350,
+        allocatedLoadingPcs: 350,
+        loadedActualPcs: 350,
+        loadingStatus: 'Loaded',
+        picReceiver: 'H. Rahmat (CV Prima Bordir)',
+        notes: 'Potongan panel dada langsung dikirim ke mitra bordir sesuai kuota target harian'
+      },
+      {
+        id: 'LOAD-001D',
+        destinationType: 'SUBCON',
+        destinationName: 'PT Multi Screen Grafika (Subkon)',
+        componentPanel: 'Panel Punggung Atas (Sablon Reflective 3M)',
+        dailyTargetRequirementPcs: 350,
+        allocatedLoadingPcs: 350,
+        loadedActualPcs: 170,
+        loadingStatus: 'Partial Loaded',
+        picReceiver: 'Ibu Ratih (Multi Screen)',
+        notes: 'Menunggu sisa 180 pcs potongan sore ini'
+      }
+    ],
+    picCutting: 'Dani (Cutting Leader)',
+    issuedByPPIC: 'Ratna Kusuma (PPIC)',
+    notes: 'Perintah potong utama hari ini. Pastikan numbering bundle dipisah antara panel Line Internal dan panel Subkon.'
+  },
+  {
+    id: 'CUT-2026-002',
+    orderNumber: 'SPK-CUT/TW/09/002',
+    cuttingDate: new Date().toISOString().split('T')[0],
+    queueNumber: 2,
+    queueStatus: 'ACTIVE_CUTTING',
+    priority: 'HIGH',
+    cuttingTable: 'Meja Potong 02 (Straight Knife & Fusing)',
+    styleId: 'sty-01',
+    styleCode: 'TW-JKT-88',
+    styleName: 'Executive Safari Jacket Navy',
+    buyer: 'PT Mitra Megah Garment Corp',
+    sopReferenceStepId: 12,
+    sopReferenceProcess: 'Tahap 12 SOP: Potong Furing Lining & Interlining Viselin Kerah/Flap',
+    sopComplianceStatus: 'PERHATIAN_SOP',
+    sopComplianceNotes: 'PERHATIAN SOP: Stok Kain Furing Asahi di gudang menipis (sisa 280 Yard < Min 600 Yard), cukup untuk batch hari ini namun batch besok perlu restock segera.',
+    materialCode: 'FAB-TW88-02',
+    materialName: 'Kain Furing Jaring Poly Mesh & Interlining Viselin Kufner 25g',
+    materialCategory: 'Kain Furing (Lining)',
+    fabricQtyToCut: 630,
+    fabricUnit: 'Yard',
+    markerRatio: 'S:1, M:2, L:2, XL:1 (Gelaran 50 Ply)',
+    componentPanelCut: 'Furing Badan Dalam, Lapisan Saku & Viselin Kerah/Manset',
+    dailyTargetCutPcs: 700,
+    actualCutPcs: 700,
+    bundleCount: 20,
+    loadingAllocations: [
+      {
+        id: 'LOAD-002A',
+        destinationType: 'LINE',
+        destinationName: 'Line 1 Sewing (In-House)',
+        componentPanel: 'Furing Dalam & Interlining Kerah (Fusing)',
+        dailyTargetRequirementPcs: 400,
+        allocatedLoadingPcs: 400,
+        loadedActualPcs: 400,
+        loadingStatus: 'Loaded',
+        picReceiver: 'Supardi (SPV Line 1)',
+        notes: 'Sudah melewati mesin fusing press dan masuk Line 1'
+      },
+      {
+        id: 'LOAD-002B',
+        destinationType: 'LINE',
+        destinationName: 'Line 2 Sewing (In-House)',
+        componentPanel: 'Lapisan Saku Dalam & Manset Fusing',
+        dailyTargetRequirementPcs: 300,
+        allocatedLoadingPcs: 300,
+        loadedActualPcs: 300,
+        loadingStatus: 'Loaded',
+        picReceiver: 'Rudi (Leader Line 2)',
+        notes: 'Lengkap 300 pasang sesuai target harian Line 2'
+      }
+    ],
+    picCutting: 'Wahyu (Operator Fusing & Potong)',
+    issuedByPPIC: 'Ratna Kusuma (PPIC)',
+    notes: 'Potongan furing & interlining selesai 100%, siap menyuplai penuh Line 1 & Line 2.'
+  },
+  {
+    id: 'CUT-2026-003',
+    orderNumber: 'SPK-CUT/TW/09/003',
+    cuttingDate: new Date().toISOString().split('T')[0],
+    queueNumber: 3,
+    queueStatus: 'WAITING_LIST',
+    priority: 'URGENT',
+    cuttingTable: 'Meja Potong 01 (Antrian Berikutnya)',
+    styleId: 'sty-02',
+    styleCode: 'TW-POLO-26',
+    styleName: 'Sport Pique Polo Shirt Black/White',
+    buyer: 'Global Sportswear Retail',
+    sopReferenceStepId: 10,
+    sopReferenceProcess: 'Tahap 6-10 SOP: Persiapan Marker & Potong Perdana (Menunggu Pilot Sample & PPM)',
+    sopComplianceStatus: 'PERHATIAN_SOP',
+    sopComplianceNotes: 'PERHATIAN BELUM SESUAI SOP: Step 5 (Setting Mesin Placket) masih Needs Review, Step 6-7 (Pilot Sample 5 pcs) terlambat 3 hari, dan Step 9 (PPM) belum selesai!',
+    materialCode: 'FAB-POLO-PIQ',
+    materialName: 'Kain Pique CVC 24s Black Jet',
+    materialCategory: 'Kain Utama (Fabric)',
+    fabricQtyToCut: 510,
+    fabricUnit: 'Kg',
+    markerRatio: 'S:2, M:3, L:3, XL:2 (Gelaran Tubular 36 Ply)',
+    componentPanelCut: 'Body Depan, Body Belakang, Lengan Pendek & Placket Kancing',
+    dailyTargetCutPcs: 600,
+    actualCutPcs: 0,
+    bundleCount: 24,
+    loadingAllocations: [
+      {
+        id: 'LOAD-003A',
+        destinationType: 'LINE',
+        destinationName: 'Line 2 Sewing (In-House)',
+        componentPanel: 'Body Depan/Belakang & Placket Kancing',
+        dailyTargetRequirementPcs: 600,
+        allocatedLoadingPcs: 600,
+        loadedActualPcs: 0,
+        loadingStatus: 'Waiting Cut',
+        picReceiver: 'Supardi (SPV Produksi)',
+        notes: 'Alokasi loading untuk target harian 600 pcs/hari di Line 2 setelah TW-JKT-88'
+      },
+      {
+        id: 'LOAD-003B',
+        destinationType: 'SUBCON',
+        destinationName: 'PT Multi Screen Grafika (Subkon)',
+        componentPanel: 'Lengan Kanan (Sablon Plastisol 4-Warna Sport Logo)',
+        dailyTargetRequirementPcs: 500,
+        allocatedLoadingPcs: 600,
+        loadedActualPcs: 0,
+        loadingStatus: 'Waiting Cut',
+        picReceiver: 'Ibu Ratih (Multi Screen)',
+        notes: 'Panel lengan harus dikirim ke subkon sablon H-2 sebelum masuk assembly Line 2'
+      }
+    ],
+    picCutting: 'Dani (Cutting Leader)',
+    issuedByPPIC: 'Ratna Kusuma (PPIC)',
+    notes: 'Masuk Waiting List Antrian #3. Kain Pique CVC sudah siap di gudang, menunggu clearance SOP Step 7 & 9 dari PE/PPIC.'
+  },
+  {
+    id: 'CUT-2026-004',
+    orderNumber: 'SPK-CUT/TW/09/004',
+    cuttingDate: new Date().toISOString().split('T')[0],
+    queueNumber: 4,
+    queueStatus: 'WAITING_LIST',
+    priority: 'HIGH',
+    cuttingTable: 'Meja Potong 03 (Line Celana & Khusus)',
+    styleId: 'sty-03',
+    styleCode: 'TW-CARGO-11',
+    styleName: 'Tactical Cargo Pants Ripstop Khaki',
+    buyer: 'Eiger Outdoor Apparel Ltd',
+    sopReferenceStepId: 14,
+    sopReferenceProcess: 'Tahap 12 & 14 SOP: Potong Tambahan Gusset Saku & Ban Pinggang Lot Akhir',
+    sopComplianceStatus: 'SESUAI_SOP',
+    sopComplianceNotes: 'Seluruh SOP Step 1-14 telah Completed tepat waktu. Potong komponen tambahan untuk menyeimbangkan loading Line 3.',
+    materialCode: 'FAB-CRG-RIP',
+    materialName: 'Kain Ripstop Stretch Military Khaki',
+    materialCategory: 'Kain Utama (Fabric)',
+    fabricQtyToCut: 320,
+    fabricUnit: 'Yard',
+    markerRatio: '28:1, 30:2, 32:3, 34:2, 36:1 (30 Ply)',
+    componentPanelCut: 'Saku Samping Cargo Berlipat (Gusset), Flap Penutup & Waistband',
+    dailyTargetCutPcs: 450,
+    actualCutPcs: 0,
+    bundleCount: 15,
+    loadingAllocations: [
+      {
+        id: 'LOAD-004A',
+        destinationType: 'LINE',
+        destinationName: 'Line 3 Sewing (In-House)',
+        componentPanel: 'Saku Samping Cargo & Ban Pinggang',
+        dailyTargetRequirementPcs: 450,
+        allocatedLoadingPcs: 450,
+        loadedActualPcs: 0,
+        loadingStatus: 'Waiting Cut',
+        picReceiver: 'Hendra (Leader Line 3)',
+        notes: 'Untuk menutup target harian Line 3 (450 pcs/hari) sebelum dikirim ke Subkon Washing'
+      },
+      {
+        id: 'LOAD-004B',
+        destinationType: 'SUBCON',
+        destinationName: 'Bandung Denim Wash Studio (Subkon)',
+        componentPanel: 'Celana Utuh Semi-Finishing (Enzyme Bio-Wash)',
+        dailyTargetRequirementPcs: 450,
+        allocatedLoadingPcs: 450,
+        loadedActualPcs: 0,
+        loadingStatus: 'Waiting Cut',
+        picReceiver: 'Kurniawan (Studio Wash)',
+        notes: 'Rute berlanjut ke Subkon Washing setelah dirakit di Line 3'
+      }
+    ],
+    picCutting: 'Rian (Marker & Cutting SPV)',
+    issuedByPPIC: 'Ratna Kusuma (PPIC)',
+    notes: 'Antrian Waiting List #4 hari ini di Meja 03.'
+  },
+  {
+    id: 'CUT-2026-005',
+    orderNumber: 'SPK-CUT/TW/09/005',
+    cuttingDate: new Date().toISOString().split('T')[0],
+    queueNumber: 5,
+    queueStatus: 'HOLD_SOP',
+    priority: 'NORMAL',
+    cuttingTable: 'Meja Potong 02 (Potong Pola Matching Motif)',
+    styleId: 'sty-04',
+    styleCode: 'TW-BATIK-09',
+    styleName: 'Modern Batik Silk Work Shirt',
+    buyer: 'Bank Mandiri Corporate Uniform',
+    sopReferenceStepId: 6,
+    sopReferenceProcess: 'Tahap 4-6 SOP: Menunggu Approval PPS & Uji Luntur Kain Batik',
+    sopComplianceStatus: 'PERHATIAN_SOP',
+    sopComplianceNotes: 'DITAHAN (HOLD SOP): Step 3 (Uji Luntur Material Batik) berstatus Needs Review & Step 4 (PPS Matching Motif Saku) belum selesai sesuai SOP!',
+    materialCode: 'FAB-BTK-SLK',
+    materialName: 'Kain Batik Silk Dobby Motif Parang Mandiri',
+    materialCategory: 'Kain Utama (Fabric)',
+    fabricQtyToCut: 360,
+    fabricUnit: 'Meter',
+    markerRatio: 'S:1, M:2, L:2, XL:1 (Single/Pin Table Matching Motif)',
+    componentPanelCut: 'Badan Depan (Matching Motif Saku), Kerah Kemeja & Manset Panjang',
+    dailyTargetCutPcs: 250,
+    actualCutPcs: 0,
+    bundleCount: 12,
+    loadingAllocations: [
+      {
+        id: 'LOAD-005A',
+        destinationType: 'LINE',
+        destinationName: 'Line 1 Sewing (In-House)',
+        componentPanel: 'Full Assembly Kemeja Batik Eksekutif',
+        dailyTargetRequirementPcs: 250,
+        allocatedLoadingPcs: 250,
+        loadedActualPcs: 0,
+        loadingStatus: 'Waiting Cut',
+        picReceiver: 'Supardi (SPV Line 1)',
+        notes: 'Menunggu SOP Step 3 & 4 selesai sebelum boleh dipotong'
+      }
+    ],
+    picCutting: 'Dani (Cutting Leader)',
+    issuedByPPIC: 'Ratna Kusuma (PPIC)',
+    notes: 'Masuk daftar Waiting List #5 namun berstatus HOLD karena SOP belum sesuai.'
+  }
+];
+
 
