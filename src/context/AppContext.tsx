@@ -393,9 +393,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       INITIAL_STYLES,
       'pt_tw_deleted_style_ids'
     );
+    const shouldClearDefaultNotes = localStorage.getItem('pt_tw_cleared_sop_notes_v1') !== 'true';
+    if (shouldClearDefaultNotes) {
+      localStorage.setItem('pt_tw_cleared_sop_notes_v1', 'true');
+    }
+
     return loaded.map(sty => {
       const initMatch = INITIAL_STYLES.find(s => s.id === sty.id || s.code === sty.code);
-      const rawSteps = sty.steps || STANDARD_SOP_STEPS;
+      const rawSteps = (sty.steps || STANDARD_SOP_STEPS).map(st =>
+        shouldClearDefaultNotes
+          ? { ...st, outputDescription: '', notes: '', machineBreakdownNotes: '' }
+          : st
+      );
       const sewStep = rawSteps.find(st => st.id === 15);
       // Tanggal mulai adalah tanggal Sewing Assembly Line (Tahap 15)
       const effectiveSewingStartDate = sewStep?.dateScheduled || initMatch?.startDate || sty.startDate;
@@ -1200,6 +1209,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...stdStep,
         id: stepId,
         picName: '', // Hanya jabatan pada picDept
+        outputDescription: '',
+        notes: '',
+        machineBreakdownNotes: '',
         status: index === 0 ? 'In Progress' : 'Pending',
         dateScheduled: stepDate,
         actualDate: '',

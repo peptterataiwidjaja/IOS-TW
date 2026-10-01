@@ -811,17 +811,17 @@ export const PEWorkflowTracker: React.FC = () => {
                       )}
                     </td>
 
-                    {/* Output Description & Technical Notes */}
+                    {/* Output Description & Technical Notes (Isi Manual) */}
                     <td className="py-3 px-4 print:py-1.5 print:px-2 print:border print:border-slate-300">
                       {isEditing ? (
-                        <div className="space-y-2">
+                        <div className="space-y-2 print:hidden">
                           <div>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase">Catatan Output:</label>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase">Catatan Output / Teknis:</label>
                             <input
                               type="text"
                               value={editNotes}
                               onChange={(e) => setEditNotes(e.target.value)}
-                              placeholder="Catatan perbaikan / hasil..."
+                              placeholder="Tulis catatan output / teknis manual..."
                               className="w-full text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-600"
                             />
                           </div>
@@ -831,7 +831,7 @@ export const PEWorkflowTracker: React.FC = () => {
                               type="text"
                               value={editMachineNotes}
                               onChange={(e) => setEditMachineNotes(e.target.value)}
-                              placeholder="Setting mesin / folder..."
+                              placeholder="Tulis catatan mesin / attachment..."
                               className="w-full text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-600"
                             />
                           </div>
@@ -848,24 +848,22 @@ export const PEWorkflowTracker: React.FC = () => {
                         </div>
                       ) : (
                         <div className="space-y-1">
-                          <p className="text-slate-800 text-[12px] font-medium leading-snug print:text-[9.5px]">
-                            {step.outputDescription}
-                          </p>
-                          {step.notes && (
-                            <p className="text-slate-600 text-[11px] bg-slate-50 p-1.5 rounded border border-slate-200 print:bg-white print:p-0 print:border-none print:text-[8.5px] print:text-slate-700">
-                              <span className="font-semibold text-slate-700">Catatan:</span> {step.notes}
-                            </p>
-                          )}
+                          <input
+                            type="text"
+                            value={step.notes || ''}
+                            onChange={(e) => updateWorkflowStep(activeStyle.id, step.id, { notes: e.target.value, outputDescription: '' })}
+                            placeholder="Isi catatan output / teknis manual..."
+                            className="w-full text-xs px-2 py-1.5 bg-white border border-slate-200 hover:border-blue-400 focus:border-blue-600 rounded-md text-slate-800 placeholder:text-slate-400 focus:outline-none print:hidden"
+                          />
                           {step.machineBreakdownNotes && (
                             <p className="text-blue-900 text-[11px] bg-blue-50/70 p-1.5 rounded border border-blue-200 print:bg-white print:p-0 print:border-none print:text-[8.5px] print:text-black">
                               <span className="font-semibold text-blue-950">Mesin/Attachment:</span> {step.machineBreakdownNotes}
                             </p>
                           )}
-                          {step.updateHistory && step.updateHistory.length > 0 && (
-                            <div className="text-[10px] text-slate-400 print:hidden">
-                              Riwayat tersimpan ({step.updateHistory.length}x perbaharuan)
-                            </div>
-                          )}
+                          {/* Print view: show manual notes if entered, otherwise leave blank for handwriting */}
+                          <div className="hidden print:block min-h-[18px] text-[9px] text-black">
+                            {step.notes || step.outputDescription || ''}
+                          </div>
                         </div>
                       )}
                     </td>

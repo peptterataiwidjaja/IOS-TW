@@ -416,11 +416,13 @@ export const PrintPDFModal: React.FC<PrintPDFModalProps> = ({ isOpen, onClose })
                               <div className="text-[8px] text-gray-700">{varianceText}</div>
                             )}
                           </td>
-                          <td className="p-1.5 text-[9.5px]">
-                            <div className="font-medium text-black">{step.outputDescription}</div>
+                          <td className="p-1.5 text-[9.5px] min-h-[20px]">
+                            {step.outputDescription && (
+                              <div className="font-medium text-black">{step.outputDescription}</div>
+                            )}
                             {step.notes && (
-                              <div className="text-[8.5px] text-gray-800 mt-0.5">
-                                <strong>Catatan:</strong> {step.notes}
+                              <div className="text-[8.5px] text-gray-800">
+                                {step.notes}
                               </div>
                             )}
                             {step.machineBreakdownNotes && (
