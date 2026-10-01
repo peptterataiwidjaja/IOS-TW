@@ -83,7 +83,7 @@ export const SpreadsheetView: React.FC = () => {
       case 'WORKFLOW':
         return {
           title: 'SOP_WORKFLOW_PE_TERATAI',
-          headers: ['No Tahap', 'Proses Kerja SOP', 'PIC / Departemen', 'Status', 'Tgl Jadwal', 'Tgl Selesai', 'Output / Kebutuhan Mesin', 'Catatan Teknis PE', 'Nama PIC'],
+          headers: ['No Tahap', 'Proses Kerja SOP', 'Jabatan PIC', 'Status', 'Tgl Jadwal', 'Tgl Aktual', 'Output / Kebutuhan Mesin', 'Catatan Teknis PE'],
           rows: currentStyle.steps
             .filter(s => s.process.toLowerCase().includes(searchFilter.toLowerCase()) || s.picDept.toLowerCase().includes(searchFilter.toLowerCase()))
             .map((step) => [
@@ -92,10 +92,9 @@ export const SpreadsheetView: React.FC = () => {
               step.picDept,
               step.status,
               step.dateScheduled,
-              step.dateCompleted || '-',
+              step.actualDate || step.dateCompleted || '-',
               step.outputDescription,
-              step.machineBreakdownNotes || step.notes || '-',
-              step.picName || '-'
+              step.machineBreakdownNotes || step.notes || '-'
             ])
         };
 
@@ -185,9 +184,9 @@ export const SpreadsheetView: React.FC = () => {
       [`PT TERATAI WIDJAJA - SOP WORKFLOW PE STYLE ${currentStyle.code}`],
       [`Buyer: ${currentStyle.buyer} | Target: ${currentStyle.targetQuantityPcs} pcs`],
       [],
-      ['No', 'Tahap / Proses', 'PIC / Dept', 'Status', 'Tgl Jadwal', 'Tgl Selesai', 'Output / Mesin', 'Catatan Teknis PE', 'Nama PIC'],
+      ['No', 'Tahap / Proses', 'Jabatan PIC', 'Status', 'Tgl Jadwal', 'Tgl Aktual', 'Output / Mesin', 'Catatan Teknis PE'],
       ...currentStyle.steps.map(step => [
-        step.id, step.process, step.picDept, step.status, step.dateScheduled, step.dateCompleted || '-', step.outputDescription, step.machineBreakdownNotes || step.notes || '-', step.picName || '-'
+        step.id, step.process, step.picDept, step.status, step.dateScheduled, step.actualDate || step.dateCompleted || '-', step.outputDescription, step.machineBreakdownNotes || step.notes || '-'
       ])
     ]);
     XLSX.utils.book_append_sheet(wb, wsWorkflow, 'SOP_PE');

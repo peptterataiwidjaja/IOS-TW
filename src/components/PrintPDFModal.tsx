@@ -398,7 +398,7 @@ export const PrintPDFModal: React.FC<PrintPDFModalProps> = ({ isOpen, onClose })
                           <td className="border-r border-black p-1.5">
                             <div className="font-bold text-black">{step.process}</div>
                             <div className="text-[9px] text-gray-700 mt-0.5">
-                              PIC: {step.picDept} {step.picName ? `• ${step.picName}` : ''}
+                              Jabatan PIC: {step.picDept}
                             </div>
                           </td>
                           <td className="border-r border-black p-1.5 text-center font-bold">

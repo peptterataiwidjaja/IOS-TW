@@ -50,7 +50,8 @@ export const PEWorkflowTracker: React.FC = () => {
   const [editNotes, setEditNotes] = useState<string>('');
   const [editMachineNotes, setEditMachineNotes] = useState<string>('');
   const [editStatus, setEditStatus] = useState<SOPWorkflowStep['status']>('Pending');
-  const [editPicName, setEditPicName] = useState<string>('');
+  const [editPicDept, setEditPicDept] = useState<string>('');
+  const [editDateScheduled, setEditDateScheduled] = useState<string>('');
   const [editActualDate, setEditActualDate] = useState<string>('');
 
   const isPE = currentUser.role === 'PE' || currentUser.role === 'FACTORY_MANAGER';
@@ -281,6 +282,20 @@ export const PEWorkflowTracker: React.FC = () => {
     return true;
   }) : [];
 
+  // Compute Sewing Assembly Line (Step 15) date and max allowed pre-sewing schedule date (H-7 / 1 week before Sewing Assembly Line)
+  const sewingStepInfo = useMemo(() => {
+    if (!activeStyle) return { sewingDate: '', maxPreSewingDate: '' };
+    const sewStep = activeStyle.steps.find(s => s.id === 15 || s.process.toLowerCase().includes('sewing assembly'));
+    if (!sewStep || !sewStep.dateScheduled) return { sewingDate: '', maxPreSewingDate: '' };
+    const sewMs = new Date(sewStep.dateScheduled + 'T00:00:00').getTime();
+    if (isNaN(sewMs)) return { sewingDate: sewStep.dateScheduled, maxPreSewingDate: '' };
+    const maxPreMs = sewMs - 7 * 24 * 60 * 60 * 1000;
+    return {
+      sewingDate: sewStep.dateScheduled,
+      maxPreSewingDate: new Date(maxPreMs).toISOString().split('T')[0]
+    };
+  }, [activeStyle]);
+
   const handlePrint = () => {
     openPrintModal('pe-workflow');
   };
@@ -290,17 +305,24 @@ export const PEWorkflowTracker: React.FC = () => {
     setEditNotes(step.notes || '');
     setEditMachineNotes(step.machineBreakdownNotes || '');
     setEditStatus(step.status);
-    setEditPicName(step.picName || '');
+    setEditPicDept(step.picDept || '');
+    setEditDateScheduled(step.dateScheduled || '');
     setEditActualDate(step.actualDate || '');
   };
 
   const handleSaveEdit = (stepId: number) => {
     if (!activeStyle) return;
+    let finalDateScheduled = editDateScheduled;
+    if (stepId < 15 && sewingStepInfo.maxPreSewingDate && finalDateScheduled > sewingStepInfo.maxPreSewingDate) {
+      finalDateScheduled = sewingStepInfo.maxPreSewingDate;
+    }
     updateWorkflowStep(activeStyle.id, stepId, {
       notes: editNotes,
       machineBreakdownNotes: editMachineNotes,
       status: editStatus,
-      picName: editPicName,
+      picDept: editPicDept.trim() || 'PE',
+      picName: '',
+      dateScheduled: finalDateScheduled,
       actualDate: editActualDate
     });
     setEditingStepId(null);
@@ -376,7 +398,7 @@ export const PEWorkflowTracker: React.FC = () => {
               Tgl Cetak: <strong>{new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
             </div>
             <div className="text-slate-600">
-              Penanggung Jawab PE: <strong>{currentUser.name}</strong>
+              Jabatan PIC: <strong>{currentUser.role} ({currentUser.department})</strong>
             </div>
             <div className="text-slate-600">
               Periode Filter: <strong>{periodLabel}</strong>
@@ -562,10 +584,15 @@ export const PEWorkflowTracker: React.FC = () => {
       {/* Main SOP Workflow Table with Actual Date Column */}
       {activeStyle && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden print:border print:border-slate-800 print:rounded-none">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between print:bg-white print:p-2">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2 print:bg-white print:p-2">
             <span className="text-xs font-bold text-slate-800">
-              Daftar 14 Tahap SOP ({activeStyle.code})
+              Daftar {activeStyle.steps.length} Tahap SOP ({activeStyle.code})
             </span>
+            {sewingStepInfo.sewingDate && (
+              <span className="text-[11px] font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200 print:hidden">
+                Jadwal Pra-Sewing (Tahap 1–14) Min. 1 Minggu Sebelum Sewing Assembly ({sewingStepInfo.sewingDate})
+              </span>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -574,7 +601,7 @@ export const PEWorkflowTracker: React.FC = () => {
                 <tr>
                   <th className="py-3 px-3 w-12 text-center print:py-1.5 print:px-1 print:border print:border-slate-400">No</th>
                   <th className="py-3 px-4 w-60 print:py-1.5 print:px-2 print:border print:border-slate-400">Tahapan Proses</th>
-                  <th className="py-3 px-3 w-36 print:hidden">Departemen PIC</th>
+                  <th className="py-3 px-3 w-36 print:hidden">Jabatan PIC</th>
                   <th className="py-3 px-3 w-28 text-center print:py-1.5 print:px-2 print:border print:border-slate-400">Status</th>
                   <th className="py-3 px-3 w-32 text-center print:py-1.5 print:px-2 print:border print:border-slate-400">Tanggal Jadwal</th>
                   <th className="py-3 px-3 w-44 bg-blue-50/70 text-blue-900 border-x border-blue-200 text-center print:bg-white print:text-black print:py-1.5 print:px-2 print:border print:border-slate-400">
@@ -627,17 +654,14 @@ export const PEWorkflowTracker: React.FC = () => {
                         {step.process}
                       </div>
                       <div className="hidden print:block text-[8.5px] text-slate-600 font-medium mt-0.5">
-                        PIC: {step.picDept} {step.picName ? `• ${step.picName}` : ''}
+                        Jabatan PIC: {step.picDept}
                       </div>
                     </td>
 
-                    {/* PIC / Dept (Screen only) */}
+                    {/* Jabatan PIC (Screen only - tanpa nama personal) */}
                     <td className="py-3 px-3 print:hidden">
                       <div className="text-xs font-semibold text-slate-800">
                         {step.picDept}
-                      </div>
-                      <div className="text-[11px] text-slate-400">
-                        {step.picName || '-'}
                       </div>
                     </td>
 
@@ -677,14 +701,33 @@ export const PEWorkflowTracker: React.FC = () => {
 
                     {/* Scheduled Date */}
                     <td className="py-3 px-3 text-slate-600 font-medium print:py-1.5 print:px-2 print:border print:border-slate-300 print:text-center">
-                      <div className="flex items-center justify-center gap-1 text-[11px] print:text-[9px] font-mono">
-                        <Calendar className="w-3 h-3 text-slate-400 print:hidden" />
-                        <span>{step.dateScheduled}</span>
-                      </div>
-                      {step.dateCompleted && (
-                        <div className="text-[10px] text-emerald-600 font-semibold mt-0.5 print:text-black print:text-[8px]">
-                          Tuntas: {step.dateCompleted}
+                      {isEditing ? (
+                        <div className="space-y-1 print:hidden">
+                          <input
+                            type="date"
+                            value={editDateScheduled}
+                            max={step.id < 15 && sewingStepInfo.maxPreSewingDate ? sewingStepInfo.maxPreSewingDate : undefined}
+                            onChange={(e) => setEditDateScheduled(e.target.value)}
+                            className="w-full text-xs p-1 bg-white border border-slate-300 rounded-md font-mono text-slate-800"
+                          />
+                          {step.id < 15 && sewingStepInfo.maxPreSewingDate && (
+                            <div className="text-[9px] text-blue-700 font-semibold">
+                              Maks: {sewingStepInfo.maxPreSewingDate} (H-7 Sewing)
+                            </div>
+                          )}
                         </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-center gap-1 text-[11px] print:text-[9px] font-mono">
+                            <Calendar className="w-3 h-3 text-slate-400 print:hidden" />
+                            <span>{step.dateScheduled}</span>
+                          </div>
+                          {step.dateCompleted && (
+                            <div className="text-[10px] text-emerald-600 font-semibold mt-0.5 print:text-black print:text-[8px]">
+                              Tuntas: {step.dateCompleted}
+                            </div>
+                          )}
+                        </>
                       )}
                     </td>
 
@@ -742,12 +785,12 @@ export const PEWorkflowTracker: React.FC = () => {
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase">Nama PIC:</label>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase">Jabatan PIC:</label>
                             <input
                               type="text"
-                              value={editPicName}
-                              onChange={(e) => setEditPicName(e.target.value)}
-                              placeholder="Nama PIC penanggung jawab..."
+                              value={editPicDept}
+                              onChange={(e) => setEditPicDept(e.target.value)}
+                              placeholder="Jabatan PIC (contoh: PE, PPIC, SPV Sewing)..."
                               className="w-full text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-600"
                             />
                           </div>
@@ -766,6 +809,11 @@ export const PEWorkflowTracker: React.FC = () => {
                             <p className="text-blue-900 text-[11px] bg-blue-50/70 p-1.5 rounded border border-blue-200 print:bg-white print:p-0 print:border-none print:text-[8.5px] print:text-black">
                               <span className="font-semibold text-blue-950">Mesin/Attachment:</span> {step.machineBreakdownNotes}
                             </p>
+                          )}
+                          {step.updateHistory && step.updateHistory.length > 0 && (
+                            <div className="text-[10px] text-slate-400 print:hidden">
+                              Riwayat tersimpan ({step.updateHistory.length}x perbaharuan)
+                            </div>
                           )}
                         </div>
                       )}
@@ -821,36 +869,36 @@ export const PEWorkflowTracker: React.FC = () => {
           <div className="grid grid-cols-4 gap-4 text-center text-[9.5px]">
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Disiapkan Oleh:</div>
-              <div className="text-[8.5px] text-slate-500">Production Engineer (PE)</div>
+              <div className="text-[8.5px] text-slate-500">Jabatan</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">{currentUser.name}</span>
+                <span className="font-extrabold text-slate-900 underline">Production Engineer (PE)</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>
 
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Diverifikasi Oleh:</div>
-              <div className="text-[8.5px] text-slate-500">PPIC &amp; Merchandiser</div>
+              <div className="text-[8.5px] text-slate-500">Jabatan</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">Ratna Kusuma, S.T.</span>
+                <span className="font-extrabold text-slate-900 underline">PPIC &amp; Merchandiser</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>
 
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Disetujui Oleh:</div>
-              <div className="text-[8.5px] text-slate-500">Factory Manager</div>
+              <div className="text-[8.5px] text-slate-500">Jabatan</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">Ir. Hendra Gunawan</span>
+                <span className="font-extrabold text-slate-900 underline">Factory Manager</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>
 
             <div className="border border-slate-400 p-2 rounded">
               <div className="font-bold text-slate-700">Diterima &amp; Dilaksanakan:</div>
-              <div className="text-[8.5px] text-slate-500">SPV Cutting / Sewing Line</div>
+              <div className="text-[8.5px] text-slate-500">Jabatan</div>
               <div className="h-14 flex items-end justify-center pb-1">
-                <span className="font-extrabold text-slate-900 underline">Supardi (SPV Produksi)</span>
+                <span className="font-extrabold text-slate-900 underline">SPV Cutting / Sewing Line</span>
               </div>
               <div className="border-t border-slate-300 pt-1 text-[8px] text-slate-500">Tgl: ______________</div>
             </div>

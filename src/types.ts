@@ -104,6 +104,16 @@ export interface SubmittedRequisitionReceipt {
   }>;
 }
 
+export interface SOPStepUpdateHistoryItem {
+  updatedAt: string;
+  updatedBy: string;
+  previousStatus?: SOPWorkflowStep['status'];
+  previousDateScheduled?: string;
+  previousActualDate?: string;
+  previousNotes?: string;
+  previousMachineBreakdownNotes?: string;
+}
+
 export interface SOPWorkflowStep {
   id: number;
   process: string;
@@ -117,6 +127,7 @@ export interface SOPWorkflowStep {
   notes?: string;
   machineBreakdownNotes?: string;
   picName: string;
+  updateHistory?: SOPStepUpdateHistoryItem[];
 }
 
 export type ProductionRoute = 'LINE' | 'SUBCON';

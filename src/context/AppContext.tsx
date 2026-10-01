@@ -198,42 +198,151 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const ONE_WEEK_MS = 7 * ONE_DAY_MS;
+
+const LEGACY_DEPT_TO_JABATAN: Record<number, string> = {
+  1: 'PE',
+  2: 'PE',
+  3: 'PPIC',
+  4: 'SPV Sewing',
+  5: 'Chief Mekanik',
+  6: 'SPV Cutting & Marker',
+  7: 'Technical Sewing',
+  8: 'PE & Technical',
+  9: 'PPIC & Factory Manager',
+  10: 'Leader Marker',
+  11: 'Kepala Gudang (Warehouse)',
+  12: 'Leader Cutting',
+  13: 'Kepala Gudang (Warehouse)',
+  14: 'Leader Cutting',
+  15: 'SPV Sewing & PE',
+  16: 'Admin Subkon & PPIC',
+  17: 'SPV QC & Finishing',
+  18: 'Kepala Gudang & PE'
+};
+
+// Ensure all steps before Sewing Assembly Line (Step 15) are scheduled at least 1 week (7 days) earlier, and only Jabatan is used
+const normalizeSOPSteps = (steps: SOPWorkflowStep[], defaultSteps?: SOPWorkflowStep[]): SOPWorkflowStep[] => {
+  const cleaned = steps.map((step, idx) => {
+    const std = STANDARD_SOP_STEPS.find(s => s.id === step.id) || STANDARD_SOP_STEPS[idx];
+    const tmpl = defaultSteps?.find(s => s.id === step.id);
+    const oldDefaultDepts = ['Mekanik', 'Cutting, Marker', 'Technical', 'PE, Technical', 'PPIC', 'Marker', 'Warehouse', 'Cutting', 'Subkon & PPIC', 'QC & Finishing', 'Warehouse & PE'];
+    const nextPicDept = (!step.picDept || oldDefaultDepts.includes(step.picDept))
+      ? (LEGACY_DEPT_TO_JABATAN[step.id] || std?.picDept || step.picDept)
+      : step.picDept;
+
+    return {
+      ...step,
+      picDept: nextPicDept,
+      picName: '', // Hapus nama personal PIC, hanya jabatan pada picDept
+      dateScheduled: step.dateScheduled || tmpl?.dateScheduled || std?.dateScheduled || '2026-09-01'
+    };
+  });
+
+  // Enforce: Tanggal jadwal tahapan sebelum Sewing Assembly Line (Step 1..14) minimal 1 minggu (7 hari) sebelum Step 15
+  const sewingStep = cleaned.find(s => s.id === 15 || s.process.toLowerCase().includes('sewing assembly'));
+  if (!sewingStep) return cleaned;
+
+  const preSewingSteps = cleaned.filter(s => s.id < sewingStep.id);
+  if (preSewingSteps.length === 0) return cleaned;
+
+  // If this style had legacy un-spaced dates where steps 7..14 were all on the same date as step 15, adopt template schedule if available
+  if (defaultSteps) {
+    const preMax = Math.max(...preSewingSteps.map(s => new Date(s.dateScheduled + 'T00:00:00').getTime()).filter(n => !isNaN(n)));
+    const sewMsCheck = new Date(sewingStep.dateScheduled + 'T00:00:00').getTime();
+    if (!isNaN(preMax) && !isNaN(sewMsCheck) && (sewMsCheck - preMax < ONE_WEEK_MS)) {
+      return cleaned.map(st => {
+        const tmpl = defaultSteps.find(d => d.id === st.id);
+        return tmpl ? { ...st, dateScheduled: tmpl.dateScheduled } : st;
+      });
+    }
+  }
+
+  const maxPreSewingMs = Math.max(
+    ...preSewingSteps
+      .map(s => new Date(s.dateScheduled + 'T00:00:00').getTime())
+      .filter(ms => !isNaN(ms))
+  );
+  const currentSewingMs = new Date(sewingStep.dateScheduled + 'T00:00:00').getTime();
+
+  if (!isNaN(maxPreSewingMs) && !isNaN(currentSewingMs) && currentSewingMs < maxPreSewingMs + ONE_WEEK_MS) {
+    const requiredSewingMs = maxPreSewingMs + ONE_WEEK_MS;
+    const shiftMs = requiredSewingMs - currentSewingMs;
+    return cleaned.map(st => {
+      if (st.id < sewingStep.id) return st;
+      const stMs = new Date(st.dateScheduled + 'T00:00:00').getTime();
+      const adjustedMs = isNaN(stMs) ? requiredSewingMs + (st.id - sewingStep.id) * 2 * ONE_DAY_MS : Math.max(requiredSewingMs + (st.id - sewingStep.id) * 2 * ONE_DAY_MS, stMs + shiftMs);
+      return {
+        ...st,
+        dateScheduled: new Date(adjustedMs).toISOString().split('T')[0]
+      };
+    });
+  }
+
+  return cleaned;
+};
+
+// Helper to merge saved items across legacy & current localStorage keys so old data is never lost on update
+function loadMergedList<T extends { id: string }>(storageKeys: string[], initialList: T[]): T[] {
+  const mergedMap = new Map<string, T>();
+  // Read from newest key to oldest key so latest user edits win
+  for (const key of storageKeys) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (item && item.id && !mergedMap.has(item.id)) {
+            mergedMap.set(item.id, item);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`Error parsing ${key}:`, e);
+    }
+  }
+  if (mergedMap.size === 0) {
+    return initialList;
+  }
+  // Ensure any default initial items not yet in storage are also preserved
+  for (const initItem of initialList) {
+    if (!mergedMap.has(initItem.id)) {
+      mergedMap.set(initItem.id, initItem);
+    }
+  }
+  return Array.from(mergedMap.values());
+}
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Authentication State
+  // Authentication State (checks current and legacy keys)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const savedAuth = localStorage.getItem('pt_tw_auth_v4');
+    const savedAuth = localStorage.getItem('pt_tw_auth_v4') ?? localStorage.getItem('pt_tw_auth_v3') ?? localStorage.getItem('pt_tw_auth');
     return savedAuth === 'true';
   });
 
-  // Users state with PE customization persistence
+  // Users state with PE customization persistence (preserves all old & new users)
   const [users, setUsers] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('pt_tw_users_v4');
-    if (saved) {
-      try {
-        const parsed: UserAccount[] = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Ensure 'cutting' tab is included for internal roles that should have it by default
-          const migrated = parsed.map(u => {
-            if (u.role !== 'SUBCON' && !u.allowedTabs.includes('cutting')) {
-              return { ...u, allowedTabs: [...u.allowedTabs, 'cutting'] };
-            }
-            return u;
-          });
-          if (!migrated.some(u => u.username === 'cutting_tw')) {
-            const cuttingAcc = INITIAL_USERS.find(u => u.username === 'cutting_tw');
-            if (cuttingAcc) migrated.push(cuttingAcc);
-          }
-          return migrated;
-        }
-      } catch (e) {
-        console.error(e);
+    const loaded = loadMergedList<UserAccount>(
+      ['pt_tw_users_v4', 'pt_tw_users_v3', 'pt_tw_users_v2', 'pt_tw_users'],
+      INITIAL_USERS
+    );
+    const migrated = loaded.map(u => {
+      if (u.role !== 'SUBCON' && !u.allowedTabs.includes('cutting')) {
+        return { ...u, allowedTabs: [...u.allowedTabs, 'cutting'] };
       }
+      return u;
+    });
+    if (!migrated.some(u => u.username === 'cutting_tw')) {
+      const cuttingAcc = INITIAL_USERS.find(u => u.username === 'cutting_tw');
+      if (cuttingAcc) migrated.push(cuttingAcc);
     }
-    return INITIAL_USERS;
+    return migrated;
   });
 
   const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
-    const savedUser = localStorage.getItem('pt_tw_user_v4');
+    const savedUser = localStorage.getItem('pt_tw_user_v4') ?? localStorage.getItem('pt_tw_user_v3') ?? localStorage.getItem('pt_tw_user');
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
@@ -247,53 +356,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [styles, setStyles] = useState<ProductionStyle[]>(() => {
-    const saved = localStorage.getItem('pt_tw_styles_v2');
-    return saved ? JSON.parse(saved) : INITIAL_STYLES;
+    const loaded = loadMergedList<ProductionStyle>(
+      ['pt_tw_styles_v2', 'pt_tw_styles_v1', 'pt_tw_styles'],
+      INITIAL_STYLES
+    );
+    return loaded.map(sty => {
+      const initMatch = INITIAL_STYLES.find(s => s.id === sty.id || s.code === sty.code);
+      return {
+        ...sty,
+        steps: normalizeSOPSteps(sty.steps || STANDARD_SOP_STEPS, initMatch?.steps)
+      };
+    });
   });
 
   const [selectedStyleId, setSelectedStyleId] = useState<string>(() => {
-    return INITIAL_STYLES[0]?.id || '';
+    const savedId = localStorage.getItem('pt_tw_selected_style_id');
+    if (savedId && styles.some(s => s.id === savedId)) {
+      return savedId;
+    }
+    return styles[0]?.id || INITIAL_STYLES[0]?.id || '';
   });
 
   const [stock, setStock] = useState<StockItem[]>(() => {
-    const saved = localStorage.getItem('pt_tw_stock');
-    return saved ? JSON.parse(saved) : INITIAL_STOCK;
+    return loadMergedList<StockItem>(['pt_tw_stock', 'pt_tw_stock_v1'], INITIAL_STOCK);
   });
 
   const [transactions, setTransactions] = useState<StockTransaction[]>(() => {
-    const saved = localStorage.getItem('pt_tw_transactions');
-    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+    return loadMergedList<StockTransaction>(['pt_tw_transactions', 'pt_tw_transactions_v1'], INITIAL_TRANSACTIONS);
   });
 
   const [cashFlow, setCashFlow] = useState<CashFlowRecord[]>(() => {
-    const saved = localStorage.getItem('pt_tw_cashflow');
-    return saved ? JSON.parse(saved) : INITIAL_CASH_FLOW;
+    return loadMergedList<CashFlowRecord>(['pt_tw_cashflow'], INITIAL_CASH_FLOW);
   });
 
   const [subconTasks, setSubconTasks] = useState<SubcontractorTask[]>(() => {
-    const saved = localStorage.getItem('pt_tw_subcon_v3');
-    return saved ? JSON.parse(saved) : INITIAL_SUBCON_TASKS;
+    return loadMergedList<SubcontractorTask>(
+      ['pt_tw_subcon_v3', 'pt_tw_subcon_v2', 'pt_tw_subcon_v1', 'pt_tw_subcon'],
+      INITIAL_SUBCON_TASKS
+    );
   });
 
   // PPIC Component Allocations state
   const [componentAllocations, setComponentAllocations] = useState<ProductionComponentAllocation[]>(() => {
-    const saved = localStorage.getItem('pt_tw_ppic_components');
-    return saved ? JSON.parse(saved) : INITIAL_PPIC_COMPONENTS;
+    return loadMergedList<ProductionComponentAllocation>(['pt_tw_ppic_components'], INITIAL_PPIC_COMPONENTS);
   });
 
   // PPIC Material Requirements state
   const [productionMaterials, setProductionMaterials] = useState<ProductionMaterialRequirement[]>(() => {
-    const saved = localStorage.getItem('pt_tw_ppic_materials');
-    return saved ? JSON.parse(saved) : INITIAL_PPIC_MATERIALS;
+    return loadMergedList<ProductionMaterialRequirement>(['pt_tw_ppic_materials'], INITIAL_PPIC_MATERIALS);
   });
 
   // Cutting Orders & Waiting List Queue state
   const [cuttingOrders, setCuttingOrders] = useState<CuttingOrderItem[]>(() => {
-    const saved = localStorage.getItem('pt_tw_cutting_orders_v1');
-    return saved ? JSON.parse(saved) : INITIAL_CUTTING_ORDERS;
+    return loadMergedList<CuttingOrderItem>(['pt_tw_cutting_orders_v1', 'pt_tw_cutting_orders'], INITIAL_CUTTING_ORDERS);
   });
 
-  const [activeTab, setActiveTab] = useState<string>('pe-workflow');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('pt_tw_active_tab') || 'pe-workflow';
+  });
 
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
@@ -371,6 +491,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('pt_tw_styles_v2', JSON.stringify(styles));
   }, [styles]);
+
+  useEffect(() => {
+    if (selectedStyleId) {
+      localStorage.setItem('pt_tw_selected_style_id', selectedStyleId);
+    }
+  }, [selectedStyleId]);
+
+  useEffect(() => {
+    if (activeTab) {
+      localStorage.setItem('pt_tw_active_tab', activeTab);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     localStorage.setItem('pt_tw_stock', JSON.stringify(stock));
@@ -963,7 +1095,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true, message: `Akun "${target?.name || ''}" (@${target?.username || ''}) berhasil dihapus dari sistem!` };
   };
 
-  // Add new Production Model / Style
+  // Add new Production Model / Style (or update existing style metadata without deleting old data)
   const addNewStyle = (params: {
     code: string;
     name: string;
@@ -976,21 +1108,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     primaryRoute?: 'LINE' | 'SUBCON' | 'HYBRID';
     autoSeedMaterials?: boolean;
   }) => {
-    const newId = `style-${Date.now()}`;
     const cleanCode = params.code.trim().toUpperCase();
     const cleanName = params.name.trim();
+
+    // Check if style with same code already exists -> update without losing old steps/progress
+    const existingStyle = styles.find(s => s.code.toUpperCase() === cleanCode);
+    if (existingStyle) {
+      setStyles(prev => prev.map(s => {
+        if (s.id !== existingStyle.id) return s;
+        return {
+          ...s,
+          name: cleanName || s.name,
+          buyer: params.buyer.trim() || s.buyer,
+          targetQuantityPcs: params.targetQuantityPcs || s.targetQuantityPcs,
+          startDate: params.startDate || s.startDate,
+          deliveryDate: params.deliveryDate || s.deliveryDate,
+          primaryRoute: params.primaryRoute || s.primaryRoute
+        };
+      }));
+      setSelectedStyleId(existingStyle.id);
+      return;
+    }
+
+    const newId = `style-${Date.now()}`;
     
-    // Generate scheduled steps adapted to the new style's start and delivery dates
-    const startMs = new Date(params.startDate).getTime();
-    const endMs = new Date(params.deliveryDate).getTime();
-    const duration = Math.max(1, endMs - startMs);
-    const stepInterval = duration / 14;
+    // Generate scheduled steps where all steps before Sewing Assembly Line (Steps 1..14)
+    // are scheduled AT LEAST 1 week (7 days) before Step 15 (Sewing Assembly Line)
+    const startMs = new Date(params.startDate + 'T00:00:00').getTime();
+    const rawEndMs = new Date(params.deliveryDate + 'T00:00:00').getTime();
+    const totalSpan = Math.max(21 * ONE_DAY_MS, rawEndMs - startMs);
+    const sewingMs = startMs + Math.max(14 * ONE_DAY_MS, Math.round(totalSpan * 0.68));
+    const maxPreSewingMs = sewingMs - ONE_WEEK_MS; // Minimal 1 minggu (7 hari) sebelum Sewing Assembly Line
+    const preSewingSpan = Math.max(ONE_DAY_MS, maxPreSewingMs - startMs);
+    const postSewingEndMs = Math.max(rawEndMs, sewingMs + 5 * ONE_DAY_MS);
+    const postSewingSpan = Math.max(3 * ONE_DAY_MS, postSewingEndMs - sewingMs);
 
     const generatedSteps: SOPWorkflowStep[] = STANDARD_SOP_STEPS.map((stdStep, index) => {
-      const stepDate = new Date(startMs + stepInterval * index).toISOString().split('T')[0];
+      let stepMs: number;
+      if (index < 14) {
+        // Steps 1 to 14: scheduled between startDate and (sewingDate - 7 days)
+        stepMs = startMs + Math.round((preSewingSpan * index) / 13);
+      } else if (index === 14) {
+        // Step 15: Sewing Assembly Line (minimal 1 minggu setelah Step 14)
+        stepMs = sewingMs;
+      } else {
+        // Steps 16 to 18: Subkon, QC & Finishing, Transfer FG
+        stepMs = sewingMs + Math.round((postSewingSpan * (index - 14)) / 3);
+      }
+      const stepDate = new Date(stepMs).toISOString().split('T')[0];
       return {
         ...stdStep,
         id: index + 1,
+        picName: '', // Hanya jabatan pada picDept
         status: index === 0 ? 'In Progress' : 'Pending',
         dateScheduled: stepDate,
         actualDate: '',
@@ -1157,8 +1326,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addStockItem = (item: Omit<StockItem, 'id' | 'lastUpdated'>) => {
     const now = new Date();
     const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+    const cleanCode = item.code.trim().toUpperCase();
+
+    // If an item with the same SKU code & style already exists, add to existing stock without deleting old data
+    const existingItem = stock.find(
+      s => s.code.toUpperCase() === cleanCode && s.styleCode.toUpperCase() === item.styleCode.toUpperCase()
+    );
+
+    if (existingItem) {
+      setStock(prev => prev.map(s => {
+        if (s.id !== existingItem.id) return s;
+        const combinedNotes = item.notes
+          ? (s.notes ? `${s.notes} | [${timestamp}] +${item.currentStock}: ${item.notes}` : item.notes)
+          : s.notes;
+        return {
+          ...s,
+          currentStock: s.currentStock + item.currentStock,
+          minStockLevel: item.minStockLevel || s.minStockLevel,
+          rackLocation: item.rackLocation || s.rackLocation,
+          unitPrice: item.unitPrice || s.unitPrice,
+          supplier: item.supplier || s.supplier,
+          lastUpdated: timestamp,
+          notes: combinedNotes
+        };
+      }));
+
+      const addTx: StockTransaction = {
+        id: `TRX-${Date.now()}`,
+        timestamp,
+        type: 'IN',
+        stockItemId: existingItem.id,
+        itemCode: existingItem.code,
+        itemName: existingItem.name,
+        styleTarget: existingItem.styleCode,
+        allocatedStyleOfItem: existingItem.styleCode,
+        isCrossStyle: false,
+        quantity: item.currentStock,
+        unit: existingItem.unit,
+        destinationDept: 'Gudang Lain',
+        picReceiver: currentUser.name,
+        picGudang: currentUser.name,
+        referenceDoc: `PO-ADD-${existingItem.code}`,
+        reason: 'Penambahan Stok Gudang (Data Lama Tetap Tersimpan)',
+        notes: item.notes || 'Penambahan kuantitas stok'
+      };
+      setTransactions(prev => [addTx, ...prev]);
+      return;
+    }
+
     const newItem: StockItem = {
       ...item,
+      code: cleanCode,
       id: `stk-${Date.now()}`,
       lastUpdated: timestamp
     };
@@ -1190,6 +1408,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateStockQuantity = (id: string, qtyDelta: number) => {
     const now = new Date();
     const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+    const target = stock.find(item => item.id === id);
     setStock(prev => prev.map(item => {
       if (item.id === id) {
         return {
@@ -1200,6 +1419,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return item;
     }));
+    if (target && qtyDelta !== 0) {
+      const adjTx: StockTransaction = {
+        id: `TRX-${Date.now()}`,
+        timestamp,
+        type: qtyDelta > 0 ? 'IN' : 'ADJUSTMENT',
+        stockItemId: target.id,
+        itemCode: target.code,
+        itemName: target.name,
+        styleTarget: target.styleCode,
+        allocatedStyleOfItem: target.styleCode,
+        isCrossStyle: false,
+        quantity: Math.abs(qtyDelta),
+        unit: target.unit,
+        destinationDept: 'Gudang Lain',
+        picReceiver: currentUser.name,
+        picGudang: currentUser.name,
+        referenceDoc: `ADJ-${target.code}-${Date.now().toString().slice(-4)}`,
+        reason: qtyDelta > 0 ? 'Penambahan Stok' : 'Penyesuaian Stok',
+        notes: `Perbaharuan stok (${qtyDelta > 0 ? '+' : ''}${qtyDelta} ${target.unit})`
+      };
+      setTransactions(prev => [adjTx, ...prev]);
+    }
   };
 
   // Issuing material / stock taking with strict style check
@@ -1464,18 +1705,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateWorkflowStep = (styleId: string, stepId: number, updates: Partial<SOPWorkflowStep>) => {
+    const now = new Date();
+    const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+
     setStyles(prev => prev.map(sty => {
       if (sty.id === styleId) {
-        const updatedSteps = sty.steps.map(step => {
+        const rawUpdatedSteps = sty.steps.map(step => {
           if (step.id === stepId) {
+            const historyEntry = {
+              updatedAt: timestamp,
+              updatedBy: currentUser.role,
+              previousStatus: step.status,
+              previousDateScheduled: step.dateScheduled,
+              previousActualDate: step.actualDate,
+              previousNotes: step.notes,
+              previousMachineBreakdownNotes: step.machineBreakdownNotes
+            };
+            const prevHistory = step.updateHistory || [];
             return {
               ...step,
               ...updates,
-              dateCompleted: updates.status === 'Completed' ? (updates.dateCompleted || new Date().toISOString().split('T')[0]) : step.dateCompleted
+              picName: '', // Hanya jabatan pada picDept
+              dateCompleted: updates.status === 'Completed' ? (updates.dateCompleted || new Date().toISOString().split('T')[0]) : step.dateCompleted,
+              updateHistory: [...prevHistory, historyEntry]
             };
           }
           return step;
         });
+
+        // Enforce minimum 1 week (7 days) before Sewing Assembly Line (Step 15) if schedule date changed
+        const updatedSteps = normalizeSOPSteps(rawUpdatedSteps);
 
         // Determine current step
         const firstIncomplete = updatedSteps.find(s => s.status !== 'Completed');
@@ -1502,17 +1761,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  // Specifically update Actual Date for SOP Step
+  // Specifically update Actual Date for SOP Step (preserving previous actualDate in history)
   const updateStepActualDate = (styleId: string, stepId: number, actualDate: string) => {
+    const now = new Date();
+    const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+
     setStyles(prev => prev.map(sty => {
       if (sty.id === styleId) {
         const updatedSteps = sty.steps.map(step => {
           if (step.id === stepId) {
             const hasDate = Boolean(actualDate && actualDate.trim());
+            const historyEntry = {
+              updatedAt: timestamp,
+              updatedBy: currentUser.role,
+              previousStatus: step.status,
+              previousActualDate: step.actualDate
+            };
             return {
               ...step,
               actualDate,
-              status: hasDate && step.status === 'Pending' ? 'In Progress' : step.status
+              status: hasDate && step.status === 'Pending' ? 'In Progress' : step.status,
+              updateHistory: [...(step.updateHistory || []), historyEntry]
             };
           }
           return step;
@@ -1841,23 +2110,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (task.id !== taskId) return task;
 
       const existingLogs = task.dailyLogs || [];
-      const sameDateIdx = existingLogs.findIndex(l => l.date === log.date);
-      let updatedLogs: SubconDailyLog[];
-
-      if (sameDateIdx >= 0) {
-        updatedLogs = existingLogs.map((l, idx) =>
-          idx === sameDateIdx
-            ? { ...l, ...log, updatedAt }
-            : l
-        );
-      } else {
-        const newLog: SubconDailyLog = {
-          ...log,
-          id: `LOG-${Date.now().toString().slice(-5)}`,
-          updatedAt
-        };
-        updatedLogs = [...existingLogs, newLog].sort((a, b) => a.date.localeCompare(b.date));
-      }
+      const newLog: SubconDailyLog = {
+        ...log,
+        id: `LOG-${Date.now().toString().slice(-5)}`,
+        updatedAt
+      };
+      // Selalu simpan riwayat lama tanpa menimpa log sebelumnya
+      const updatedLogs: SubconDailyLog[] = [...existingLogs, newLog].sort((a, b) => a.date.localeCompare(b.date));
 
       const totalCompletedFromLogs = updatedLogs.reduce((sum, l) => sum + l.actualOutputPcs, 0);
       const totalDefectsFromLogs = updatedLogs.reduce((sum, l) => sum + l.rejectPcs, 0);

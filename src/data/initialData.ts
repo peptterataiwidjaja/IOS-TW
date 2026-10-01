@@ -174,7 +174,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     outputDescription: 'Breakdown process disertai dengan kebutuhan mesin',
     notes: 'Kebutuhan: 24 unit single needle, 6 unit overdeck, 2 unit kansai special.',
     machineBreakdownNotes: 'SN: 24, DN: 4, Overlock 5-thread: 8, Bartack: 2',
-    picName: 'Budi Santoso (PE)'
+    picName: ''
   },
   {
     id: 2,
@@ -187,7 +187,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-03',
     outputDescription: 'Pendistribusian jadwal persiapan produksi kepada seluruh tim',
     notes: 'Matriks time table telah disebar ke PPIC, Gudang, Cutting, Mekanik.',
-    picName: 'Budi Santoso (PE)'
+    picName: ''
   },
   {
     id: 3,
@@ -200,7 +200,7 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-05',
     outputDescription: 'Sisa Potongan bahan diberikan kepada mekanik untuk setting mesin',
     notes: 'Kain sample TC Twill & Interlining telah disiapkan PPIC 100%.',
-    picName: 'Ratna Kusuma (PPIC)'
+    picName: ''
   },
   {
     id: 4,
@@ -213,12 +213,12 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-07',
     outputDescription: 'Output: Catatan perbaikan terkait cutting dan pola',
     notes: 'Pola kerah perlu ditambah 0.3 cm untuk toleransi susut jahitan.',
-    picName: 'Supardi (SPV Sewing)'
+    picName: ''
   },
   {
     id: 5,
     process: 'Persiapan Mesin dan attachment untuk pilot sample',
-    picDept: 'Mekanik',
+    picDept: 'Chief Mekanik',
     assignedRole: 'PE',
     status: 'Completed',
     dateScheduled: '2026-09-08',
@@ -227,12 +227,12 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     outputDescription: 'Output: Catatan kebutuhan dan setting mesin spesial sebelum mass production',
     notes: 'Folder saku bobok dan attachment pasang zipper terkalibrasi presisi.',
     machineBreakdownNotes: 'Attachment folder bibir saku siap di Line 3',
-    picName: 'Joko (Chief Mekanik)'
+    picName: ''
   },
   {
     id: 6,
     process: 'Material dan Marker Pilot Sample (5 pcs)',
-    picDept: 'Cutting, Marker',
+    picDept: 'SPV Cutting & Marker',
     assignedRole: 'PRODUCTION',
     status: 'Completed',
     dateScheduled: '2026-09-09',
@@ -240,12 +240,12 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-09',
     outputDescription: 'Bahan sample diambil dari produksi dan menjadi output produksi',
     notes: 'Marker efisiensi 86.4% untuk 5 pcs pilot.',
-    picName: 'Rian (Marker SPV)'
+    picName: ''
   },
   {
     id: 7,
     process: 'Pembuatan Pilot Sample - Selesai (5pcs)',
-    picDept: 'Technical',
+    picDept: 'Technical Sewing',
     assignedRole: 'PE',
     status: 'Completed',
     dateScheduled: '2026-09-10',
@@ -253,12 +253,12 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-11',
     outputDescription: 'Output: Catatan kesulitan proses',
     notes: 'Kritis pada jahitan armhole curve, operator butuh jig bantu.',
-    picName: 'Bambang (Technical Sewing)'
+    picName: ''
   },
   {
     id: 8,
     process: 'Technical Meeting',
-    picDept: 'PE, Technical',
+    picDept: 'PE & Technical',
     assignedRole: 'PE',
     status: 'Completed',
     dateScheduled: '2026-09-11',
@@ -266,12 +266,12 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-11',
     outputDescription: 'Review pilot sample, bedah critical point bersama QC & Line Leader',
     notes: 'Semua rekomendasi teknis telah disetujui tim produksi.',
-    picName: 'Budi Santoso & Tim PE'
+    picName: ''
   },
   {
     id: 9,
     process: 'PPM (Pre-Production Meeting)',
-    picDept: 'PPIC',
+    picDept: 'PPIC & Factory Manager',
     assignedRole: 'PPIC',
     status: 'Completed',
     dateScheduled: '2026-09-12',
@@ -279,12 +279,12 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-12',
     outputDescription: 'Rapat koordinasi lintas departemen: target output 600 pcs/hari',
     notes: 'Target delivery buyer 30 September 2026 disepakati.',
-    picName: 'Ratna Kusuma & Ir. Hendra'
+    picName: ''
   },
   {
     id: 10,
     process: 'Cutting Plan dan Marker',
-    picDept: 'Marker',
+    picDept: 'Leader Marker',
     assignedRole: 'PRODUCTION',
     status: 'Completed',
     dateScheduled: '2026-09-12',
@@ -292,12 +292,12 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-13',
     outputDescription: 'Perhitungan yardage gelaran & rasio marker S, M, L, XL',
     notes: 'Marker length 7.2 meter, total gelaran 42 ply.',
-    picName: 'Rian (Marker Master)'
+    picName: ''
   },
   {
     id: 11,
     process: 'Kirim Material Cutting',
-    picDept: 'Warehouse',
+    picDept: 'Kepala Gudang (Warehouse)',
     assignedRole: 'WAREHOUSE',
     status: 'Completed',
     dateScheduled: '2026-09-13',
@@ -305,43 +305,43 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     dateCompleted: '2026-09-13',
     outputDescription: 'Pengiriman 30 roll kain utama dari gudang ke ruang cutting',
     notes: 'Surat jalan WH/OUT/2026/09/112 telah tervalidasi PIC Gudang.',
-    picName: 'Agus Setiawan (Warehouse)'
+    picName: ''
   },
   {
     id: 12,
     process: 'Gelar dan Potong Material',
-    picDept: 'Cutting',
+    picDept: 'Leader Cutting',
     assignedRole: 'PRODUCTION',
     status: 'In Progress',
     dateScheduled: '2026-09-14',
     actualDate: '2026-09-14',
     outputDescription: 'Spreading fabric resting 24 jam & pemotongan mesin bandknife',
     notes: 'Resting kain selesai, saat ini proses potong batch 1 (1.200 pcs).',
-    picName: 'Dani (Cutting Leader)'
+    picName: ''
   },
   {
     id: 13,
     process: 'Kirim Aksesoris ke Sewing',
-    picDept: 'Warehouse',
+    picDept: 'Kepala Gudang (Warehouse)',
     assignedRole: 'WAREHOUSE',
     status: 'In Progress',
     dateScheduled: '2026-09-14',
     actualDate: '2026-09-14',
     outputDescription: 'Penyerahan benang, zipper YKK, kancing, interlining ke sewing floor',
     notes: 'Sebagian benang warna navy masih di bawah safety stock.',
-    picName: 'Agus Setiawan (Warehouse)'
+    picName: ''
   },
   {
     id: 14,
     process: 'Loading Komponen',
-    picDept: 'Cutting',
+    picDept: 'Leader Cutting',
     assignedRole: 'PRODUCTION',
     status: 'Pending',
     dateScheduled: '2026-09-15',
     actualDate: '',
     outputDescription: 'Bundling & numbering potongan panel, siap di-load ke Sewing Line 1 & 2',
     notes: 'Menunggu hasil final potongan lot B.',
-    picName: 'Dani (Cutting Leader)'
+    picName: ''
   },
   {
     id: 15,
@@ -349,43 +349,43 @@ export const STANDARD_SOP_STEPS: SOPWorkflowStep[] = [
     picDept: 'SPV Sewing & PE',
     assignedRole: 'PRODUCTION',
     status: 'Pending',
-    dateScheduled: '2026-09-16',
+    dateScheduled: '2026-09-22',
     outputDescription: 'Proses perakitan garmen, target efisiensi line 78%',
     notes: 'SMV target: 14.5 menit per garmen.',
-    picName: 'Supardi (SPV Sewing)'
+    picName: ''
   },
   {
     id: 16,
     process: 'Proses Subkon (Bordir & Sablon)',
-    picDept: 'Subkon & PPIC',
+    picDept: 'Admin Subkon & PPIC',
     assignedRole: 'SUBCON',
     status: 'Pending',
-    dateScheduled: '2026-09-17',
+    dateScheduled: '2026-09-24',
     outputDescription: 'Kirim panel badan depan & lengan ke CV Prima Bordir',
     notes: 'Kapasitas subkon 500 pcs/hari.',
-    picName: 'CV Prima Bordir & Ratna (PPIC)'
+    picName: ''
   },
   {
     id: 17,
     process: 'QC End-Line & Finishing',
-    picDept: 'QC & Finishing',
+    picDept: 'SPV QC & Finishing',
     assignedRole: 'PRODUCTION',
     status: 'Pending',
-    dateScheduled: '2026-09-22',
+    dateScheduled: '2026-09-27',
     outputDescription: 'Pemeriksaan 100%, buang benang, steam ironing & metal detector',
     notes: 'AQL standard 1.5.',
-    picName: 'Lina (QC SPV)'
+    picName: ''
   },
   {
     id: 18,
     process: 'Transfer Gudang Barang Jadi (FG)',
-    picDept: 'Warehouse & PE',
+    picDept: 'Kepala Gudang & PE',
     assignedRole: 'WAREHOUSE',
     status: 'Pending',
-    dateScheduled: '2026-09-26',
+    dateScheduled: '2026-09-29',
     outputDescription: 'Packing polybag, karton box, final audit sebelum shipment buyer',
     notes: 'Siap ekspor/kirim ke buyer PT Teratai Widjaja.',
-    picName: 'Agus Setiawan & Budi Santoso'
+    picName: ''
   }
 ];
 
@@ -419,7 +419,7 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     currentWorkflowStep: 6,
     steps: STANDARD_SOP_STEPS.map(s => {
       if (s.id <= 4) {
-        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-09', actualDate: '2026-09-09' };
+        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-09', actualDate: '2026-09-09', picName: '' };
       }
       if (s.id === 5) {
         return {
@@ -428,7 +428,8 @@ export const INITIAL_STYLES: ProductionStyle[] = [
           dateScheduled: '2026-09-10',
           actualDate: '2026-09-13',
           notes: 'PERHATIAN SOP: Folder placket polo shirt belum presisi (selisih 2mm), mekanik wajib kalibrasi ulang sebelum Pilot Sample!',
-          machineBreakdownNotes: 'Mesin kansai placket Line 2 jarum loncat, sedang diservis mekanik.'
+          machineBreakdownNotes: 'Mesin kansai placket Line 2 jarum loncat, sedang diservis mekanik.',
+          picName: ''
         };
       }
       if (s.id === 6) {
@@ -437,7 +438,8 @@ export const INITIAL_STYLES: ProductionStyle[] = [
           status: 'In Progress' as const,
           dateScheduled: '2026-09-11',
           actualDate: '2026-09-14',
-          notes: 'Terlambat 3 hari dari jadwal SOP: Potongan 5 pcs pilot sample menunggu approval koreksi pola placket.'
+          notes: 'Terlambat 3 hari dari jadwal SOP: Potongan 5 pcs pilot sample menunggu approval koreksi pola placket.',
+          picName: ''
         };
       }
       if (s.id === 9) {
@@ -446,14 +448,34 @@ export const INITIAL_STYLES: ProductionStyle[] = [
           status: 'Pending' as const,
           dateScheduled: '2026-09-13',
           actualDate: '',
-          notes: 'PPM (Pre-Production Meeting) belum terlaksana padahal jadwal masuk antrian cutting sudah dekat.'
+          notes: 'PPM (Pre-Production Meeting) belum terlaksana padahal jadwal masuk antrian cutting sudah dekat.',
+          picName: ''
+        };
+      }
+      if (s.id < 15) {
+        return {
+          ...s,
+          status: 'Pending' as const,
+          dateScheduled: s.id <= 8 ? '2026-09-12' : (s.id <= 11 ? '2026-09-15' : (s.id <= 13 ? '2026-09-16' : '2026-09-18')),
+          actualDate: '',
+          picName: ''
+        };
+      }
+      if (s.id === 15) {
+        return {
+          ...s,
+          status: 'Pending' as const,
+          dateScheduled: '2026-09-25',
+          actualDate: '',
+          picName: ''
         };
       }
       return {
         ...s,
         status: 'Pending' as const,
-        dateScheduled: '2026-09-15',
-        actualDate: ''
+        dateScheduled: s.id === 16 ? '2026-09-28' : (s.id === 17 ? '2026-10-03' : '2026-10-08'),
+        actualDate: '',
+        picName: ''
       };
     }),
     cuttingProgressPcs: 0,
@@ -472,11 +494,36 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     deliveryDate: '2026-09-25',
     status: 'Sewing',
     currentWorkflowStep: 15,
-    steps: STANDARD_SOP_STEPS.map(s => ({
-      ...s,
-      status: s.id <= 14 ? 'Completed' : (s.id === 15 ? 'In Progress' : 'Pending'),
-      actualDate: s.id <= 14 ? s.dateScheduled : (s.id === 15 ? s.dateScheduled : '')
-    })),
+    steps: STANDARD_SOP_STEPS.map(s => {
+      const cargoDates: Record<number, string> = {
+        1: '2026-08-20',
+        2: '2026-08-21',
+        3: '2026-08-22',
+        4: '2026-08-24',
+        5: '2026-08-26',
+        6: '2026-08-27',
+        7: '2026-08-29',
+        8: '2026-08-31',
+        9: '2026-09-01',
+        10: '2026-09-02',
+        11: '2026-09-04',
+        12: '2026-09-05',
+        13: '2026-09-07',
+        14: '2026-09-08',
+        15: '2026-09-15',
+        16: '2026-09-18',
+        17: '2026-09-21',
+        18: '2026-09-24'
+      };
+      const sched = cargoDates[s.id] || s.dateScheduled;
+      return {
+        ...s,
+        dateScheduled: sched,
+        status: s.id <= 14 ? 'Completed' : (s.id === 15 ? 'In Progress' : 'Pending'),
+        actualDate: s.id <= 14 ? sched : (s.id === 15 ? sched : ''),
+        picName: ''
+      };
+    }),
     cuttingProgressPcs: 2800,
     sewingProgressPcs: 1420,
     qcPassedPcs: 450,
@@ -495,7 +542,7 @@ export const INITIAL_STYLES: ProductionStyle[] = [
     currentWorkflowStep: 4,
     steps: STANDARD_SOP_STEPS.map(s => {
       if (s.id <= 2) {
-        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-10', actualDate: '2026-09-10' };
+        return { ...s, status: 'Completed' as const, dateScheduled: '2026-09-10', actualDate: '2026-09-10', picName: '' };
       }
       if (s.id === 3) {
         return {
@@ -503,7 +550,8 @@ export const INITIAL_STYLES: ProductionStyle[] = [
           status: 'Needs Review' as const,
           dateScheduled: '2026-09-11',
           actualDate: '2026-09-14',
-          notes: 'PERHATIAN SOP: Material kain batik motif parang korporat belum lolos uji luntur (color fastness) di lab QC!'
+          notes: 'PERHATIAN SOP: Material kain batik motif parang korporat belum lolos uji luntur (color fastness) di lab QC!',
+          picName: ''
         };
       }
       if (s.id === 4) {
@@ -512,14 +560,34 @@ export const INITIAL_STYLES: ProductionStyle[] = [
           status: 'In Progress' as const,
           dateScheduled: '2026-09-12',
           actualDate: '',
-          notes: 'PPS tertunda 2 hari karena matching motif saku depan belum simetris sesuai SOP.'
+          notes: 'PPS tertunda 2 hari karena matching motif saku depan belum simetris sesuai SOP.',
+          picName: ''
+        };
+      }
+      if (s.id < 15) {
+        return {
+          ...s,
+          status: 'Pending' as const,
+          dateScheduled: s.id <= 7 ? '2026-09-15' : (s.id <= 10 ? '2026-09-18' : (s.id <= 12 ? '2026-09-21' : '2026-09-25')),
+          actualDate: '',
+          picName: ''
+        };
+      }
+      if (s.id === 15) {
+        return {
+          ...s,
+          status: 'Pending' as const,
+          dateScheduled: '2026-10-02',
+          actualDate: '',
+          picName: ''
         };
       }
       return {
         ...s,
         status: 'Pending' as const,
-        dateScheduled: '2026-09-16',
-        actualDate: ''
+        dateScheduled: s.id === 16 ? '2026-10-06' : (s.id === 17 ? '2026-10-12' : '2026-10-18'),
+        actualDate: '',
+        picName: ''
       };
     }),
     cuttingProgressPcs: 0,
