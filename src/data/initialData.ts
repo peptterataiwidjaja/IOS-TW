@@ -144,7 +144,8 @@ export const INITIAL_USERS: UserAccount[] = [
     department: 'Mitra Rekanan Subkon (Bordir)',
     email: 'subcon.prima@gmail.com',
     allowedTabs: [
-      'subcon'
+      'subcon',
+      'warehouse-stock'
     ]
   },
   {
@@ -156,7 +157,8 @@ export const INITIAL_USERS: UserAccount[] = [
     department: 'Mitra Rekanan Subkon (Sablon)',
     email: 'admin@multiscreen.co.id',
     allowedTabs: [
-      'subcon'
+      'subcon',
+      'warehouse-stock'
     ]
   }
 ];
@@ -583,168 +585,7 @@ export const INITIAL_STYLES: ProductionStyle[] = [
   }
 ];
 
-export const INITIAL_STOCK: StockItem[] = [
-  {
-    id: 'stk-001',
-    code: 'FAB-TW88-01',
-    name: 'Kain Cotton Twill 20x10 Navy Blue',
-    category: 'Kain Utama (Fabric)',
-    styleCode: 'TW-JKT-88',
-    styleName: 'Executive Safari Jacket Navy',
-    currentStock: 3200,
-    minStockLevel: 1000,
-    unit: 'Yard',
-    rackLocation: 'Gudang-A / Rak 01-A',
-    unitPrice: 38500,
-    supplier: 'PT Grand Textile Mills',
-    lastUpdated: '2026-09-14 08:30',
-    notes: 'Kualitas lot A, shrinkage test OK 1.8%'
-  },
-  {
-    id: 'stk-002',
-    code: 'FAB-TW88-02',
-    name: 'Kain Furing Asahi Lining Dark Blue',
-    category: 'Kain Furing (Lining)',
-    styleCode: 'TW-JKT-88',
-    styleName: 'Executive Safari Jacket Navy',
-    currentStock: 280, // CRITICAL LOW STOCK
-    minStockLevel: 600,
-    unit: 'Yard',
-    rackLocation: 'Gudang-A / Rak 02-B',
-    unitPrice: 14200,
-    supplier: 'CV Warna Tekstil',
-    lastUpdated: '2026-09-13 14:15',
-    notes: 'PERINGATAN: Di bawah batas aman! Butuh restock untuk batch 2.'
-  },
-  {
-    id: 'stk-003',
-    code: 'ACC-TW88-ZIP',
-    name: 'Metal Zipper YKK #5 Antique Brass 28"',
-    category: 'Resleting (Zipper)',
-    styleCode: 'TW-JKT-88',
-    styleName: 'Executive Safari Jacket Navy',
-    currentStock: 3650,
-    minStockLevel: 800,
-    unit: 'Pcs',
-    rackLocation: 'Gudang-B / Laci Z-04',
-    unitPrice: 8500,
-    supplier: 'PT YKK Zipper Indonesia',
-    lastUpdated: '2026-09-12 11:00',
-    notes: 'Stok cukup untuk full target PO'
-  },
-  {
-    id: 'stk-004',
-    code: 'ACC-TW88-BTN',
-    name: 'Kancing Cor Logam Motif Teratai 24L',
-    category: 'Kancing (Buttons)',
-    styleCode: 'TW-JKT-88',
-    styleName: 'Executive Safari Jacket Navy',
-    currentStock: 45, // CRITICAL LOW (in Gross)
-    minStockLevel: 100,
-    unit: 'Gross',
-    rackLocation: 'Gudang-B / Rak B-12',
-    unitPrice: 42000,
-    supplier: 'PD Megah Button',
-    lastUpdated: '2026-09-14 10:20',
-    notes: 'Peringatan: Stok menipis, segera ajukan PR ke PPIC'
-  },
-  {
-    id: 'stk-005',
-    code: 'THD-TW88-NAV',
-    name: 'Benang Jahit Spun Poly 40/2 Navy #842',
-    category: 'Benang Jahit',
-    styleCode: 'TW-JKT-88',
-    styleName: 'Executive Safari Jacket Navy',
-    currentStock: 35, // CRITICAL LOW STOCK
-    minStockLevel: 60,
-    unit: 'Cones',
-    rackLocation: 'Gudang-B / Lemari T-01',
-    unitPrice: 18500,
-    supplier: 'PT Coats Rejo Indonesia',
-    lastUpdated: '2026-09-14 09:10',
-    notes: 'Konsumsi sewing tinggi, butuh 50 cones tambahan'
-  },
-  {
-    id: 'stk-006',
-    code: 'FAB-POLO-PIQ',
-    name: 'Kain Pique CVC 24s Black Jet',
-    category: 'Kain Utama (Fabric)',
-    styleCode: 'TW-POLO-26',
-    styleName: 'Sport Pique Polo Shirt Black/White',
-    currentStock: 4800,
-    minStockLevel: 1500,
-    unit: 'Kg',
-    rackLocation: 'Gudang-A / Rak 04-C',
-    unitPrice: 78000,
-    supplier: 'PT Kahatex Bandung',
-    lastUpdated: '2026-09-14 07:45',
-    notes: 'Lengkap dengan rib kerah dan manset'
-  },
-  {
-    id: 'stk-007',
-    code: 'ACC-POLO-RIB',
-    name: 'Kerah & Manset Rajut Katun Pique Striped',
-    category: 'Aksesoris & Hangtag',
-    styleCode: 'TW-POLO-26',
-    styleName: 'Sport Pique Polo Shirt Black/White',
-    currentStock: 5200,
-    minStockLevel: 1000,
-    unit: 'Set',
-    rackLocation: 'Gudang-B / Rak B-08',
-    unitPrice: 6500,
-    supplier: 'CV Rajut Mulia Jaya',
-    lastUpdated: '2026-09-10 16:30',
-    notes: 'Aksesoris khusus style TW-POLO-26'
-  },
-  {
-    id: 'stk-008',
-    code: 'FAB-CRG-RIP',
-    name: 'Kain Ripstop Stretch Military Khaki',
-    category: 'Kain Utama (Fabric)',
-    styleCode: 'TW-CARGO-11',
-    styleName: 'Tactical Cargo Pants Ripstop Khaki',
-    currentStock: 850, // LOW STOCK for remaining batch
-    minStockLevel: 1200,
-    unit: 'Yard',
-    rackLocation: 'Gudang-A / Rak 05-A',
-    unitPrice: 49000,
-    supplier: 'PT Sritex Sukoharjo',
-    lastUpdated: '2026-09-11 13:00',
-    notes: 'Sisa stok untuk repeat order sedang dihitung'
-  },
-  {
-    id: 'stk-009',
-    code: 'INT-ALL-VIS',
-    name: 'Interlining Viselin Kufner 25g Fusible',
-    category: 'Interlining / Viselin',
-    styleCode: 'TW-JKT-88',
-    styleName: 'Executive Safari Jacket Navy',
-    currentStock: 1400,
-    minStockLevel: 500,
-    unit: 'Meter',
-    rackLocation: 'Gudang-B / Rak I-02',
-    unitPrice: 9800,
-    supplier: 'PT Freudenberg Interlining',
-    lastUpdated: '2026-09-12 10:00',
-    notes: 'Bahan pelapis kerah & flap kantong'
-  },
-  {
-    id: 'stk-010',
-    code: 'PKG-GEN-PLB',
-    name: 'Polybag PP Tebal 0.04mm + Logo Buyer Teratai',
-    category: 'Polybag & Karton',
-    styleCode: 'TW-JKT-88',
-    styleName: 'Executive Safari Jacket Navy',
-    currentStock: 3800,
-    minStockLevel: 1000,
-    unit: 'Pcs',
-    rackLocation: 'Gudang-C / Palet P-01',
-    unitPrice: 650,
-    supplier: 'CV Plastik Sentosa',
-    lastUpdated: '2026-09-09 15:00',
-    notes: 'Stok kemasan aman'
-  }
-];
+export const INITIAL_STOCK: StockItem[] = [];
 
 export const INITIAL_TRANSACTIONS: StockTransaction[] = [
   {

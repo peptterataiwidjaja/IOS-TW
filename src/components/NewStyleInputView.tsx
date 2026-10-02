@@ -41,7 +41,7 @@ export const NewStyleInputView: React.FC = () => {
   const [startDate, setStartDate] = useState(todayStr);
   const [deliveryDate, setDeliveryDate] = useState(nextMonthStr);
   const [primaryRoute, setPrimaryRoute] = useState<'LINE' | 'SUBCON' | 'HYBRID'>('HYBRID');
-  const [autoSeedMaterials, setAutoSeedMaterials] = useState<boolean>(true);
+  const [autoSeedMaterials, setAutoSeedMaterials] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 

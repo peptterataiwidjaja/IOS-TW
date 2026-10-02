@@ -36,6 +36,13 @@ interface AppContextType {
   // Authentication
   isAuthenticated: boolean;
   login: (username: string, password?: string) => { success: boolean; message: string };
+  registerAccount: (params: {
+    name: string;
+    usernameOrEmail: string;
+    password: string;
+    role?: UserRole;
+    department?: string;
+  }) => { success: boolean; message: string };
   logout: () => void;
   currentUser: UserAccount;
   setCurrentUser: (user: UserAccount) => void;
@@ -101,7 +108,9 @@ interface AppContextType {
   // Stock State & Actions
   stock: StockItem[];
   addStockItem: (item: Omit<StockItem, 'id' | 'lastUpdated'>) => void;
+  updateStockItem: (id: string, updates: Partial<Omit<StockItem, 'id'>>) => void;
   updateStockQuantity: (id: string, qtyDelta: number) => void;
+  deleteStockItem: (id: string) => void;
 
   // Transactions
   transactions: StockTransaction[];
@@ -348,10 +357,9 @@ function loadMergedList<T extends { id: string }>(storageKeys: string[], initial
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Authentication State (checks current and legacy keys)
+  // Authentication State: require login per session (v5) so login screen is shown before entering
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const savedAuth = localStorage.getItem('pt_tw_auth_v4') ?? localStorage.getItem('pt_tw_auth_v3') ?? localStorage.getItem('pt_tw_auth');
-    return savedAuth === 'true';
+    return sessionStorage.getItem('pt_tw_session_auth_v5') === 'true';
   });
 
   // Users state with PE customization persistence (preserves all old & new users)
@@ -361,10 +369,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       INITIAL_USERS
     );
     const migrated = loaded.map(u => {
-      if (u.role !== 'SUBCON' && !u.allowedTabs.includes('cutting')) {
-        return { ...u, allowedTabs: [...u.allowedTabs, 'cutting'] };
+      const nextTabs = new Set(u.allowedTabs);
+      nextTabs.add('warehouse-stock');
+      if (u.role !== 'SUBCON') {
+        nextTabs.add('cutting');
+        nextTabs.add('pe-workflow');
+        nextTabs.add('new-style');
       }
-      return u;
+      return { ...u, allowedTabs: Array.from(nextTabs) };
     });
     if (!migrated.some(u => u.username === 'cutting_tw')) {
       const cuttingAcc = INITIAL_USERS.find(u => u.username === 'cutting_tw');
@@ -427,7 +439,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [stock, setStock] = useState<StockItem[]>(() => {
-    return loadMergedList<StockItem>(['pt_tw_stock', 'pt_tw_stock_v1'], INITIAL_STOCK);
+    // One-time cleanup of initial default stock items (stk-001..stk-010) as requested so stock starts empty and is input manually
+    const clearedInitialStock = localStorage.getItem('pt_tw_cleared_initial_stock_v1') === 'true';
+    if (!clearedInitialStock) {
+      localStorage.setItem('pt_tw_cleared_initial_stock_v1', 'true');
+      localStorage.removeItem('pt_tw_stock');
+      localStorage.removeItem('pt_tw_stock_v1');
+      localStorage.setItem('pt_tw_stock_v2', JSON.stringify([]));
+      return [];
+    }
+    const legacyDefaultIds = new Set(['stk-001', 'stk-002', 'stk-003', 'stk-004', 'stk-005', 'stk-006', 'stk-007', 'stk-008', 'stk-009', 'stk-010']);
+    const loadedStock = loadMergedList<StockItem>(['pt_tw_stock_v2', 'pt_tw_stock'], [], 'pt_tw_deleted_stock_ids');
+    return loadedStock.filter(item => !legacyDefaultIds.has(item.id));
   });
 
   const [transactions, setTransactions] = useState<StockTransaction[]>(() => {
@@ -524,8 +547,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem('pt_tw_last_gas_sync') || undefined;
   });
 
-  // Sync to local storage
+  // Sync to storage
   useEffect(() => {
+    sessionStorage.setItem('pt_tw_session_auth_v5', isAuthenticated ? 'true' : 'false');
     localStorage.setItem('pt_tw_auth_v4', isAuthenticated ? 'true' : 'false');
   }, [isAuthenticated]);
 
@@ -554,6 +578,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [activeTab]);
 
   useEffect(() => {
+    localStorage.setItem('pt_tw_stock_v2', JSON.stringify(stock));
     localStorage.setItem('pt_tw_stock', JSON.stringify(stock));
   }, [stock]);
 
@@ -860,25 +885,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return attentionList.sort((a, b) => sevOrder[a.severity] - sevOrder[b.severity]);
   }, [styles, productionMaterials, stock, cuttingOrders]);
 
-  // Login handler (requires username and password)
-  const login = (username: string, password?: string) => {
-    const cleanUsername = username.trim().toLowerCase();
+  // Login handler (supports Email or Username + Password)
+  const login = (usernameOrEmail: string, password?: string) => {
+    const cleanInput = usernameOrEmail.trim().toLowerCase();
     const cleanPassword = (password || '').trim();
 
-    if (!cleanUsername || !cleanPassword) {
-      return { success: false, message: 'Silakan masukkan User dan Password terlebih dahulu!' };
+    if (!cleanInput || !cleanPassword) {
+      return { success: false, message: 'Silakan masukkan Email/User dan Password terlebih dahulu!' };
     }
 
     const found = users.find(u => {
       const uname = u.username.toLowerCase();
-      if (uname === cleanUsername) return true;
-      // Support 'pe' or 'pe_admin' for the PE account
-      if (u.role === 'PE' && (cleanUsername === 'pe' || cleanUsername === 'pe_admin')) return true;
+      const uemail = (u.email || '').toLowerCase();
+      if (uname === cleanInput || (uemail && uemail === cleanInput)) return true;
+      // Support email prefix before '@' matching username or email prefix
+      if (uemail && uemail.split('@')[0] === cleanInput) return true;
+      // Support 'pe', 'pe_admin', or 'peptterataiwidjaja@gmail.com' for the PE account
+      if (u.role === 'PE' && (cleanInput === 'pe' || cleanInput === 'pe_admin' || cleanInput === 'peptterataiwidjaja@gmail.com' || cleanInput === 'pe.terataiwidjaja@gmail.com')) return true;
       return false;
     });
 
     if (!found) {
-      return { success: false, message: 'User / Username tidak ditemukan dalam sistem!' };
+      return { success: false, message: 'Akun Email / User tidak ditemukan dalam sistem!' };
     }
 
     const expectedPass = found.password || (found.role === 'PE' ? 'pe123' : `${found.username.toLowerCase()}123`);
@@ -890,6 +918,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCurrentUser(found);
     setIsAuthenticated(true);
+    sessionStorage.setItem('pt_tw_session_auth_v5', 'true');
 
     // Route user to appropriate allowed tab
     if (found.role === 'SUBCON') {
@@ -900,7 +929,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } else {
       if (!found.allowedTabs.includes(activeTab)) {
-        setActiveTab(found.allowedTabs[0] || 'pe-workflow');
+        setActiveTab(found.allowedTabs[0] || 'warehouse-stock');
       }
     }
 
@@ -909,14 +938,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     setIsAuthenticated(false);
+    sessionStorage.removeItem('pt_tw_session_auth_v5');
   };
 
-  // Check tab permissions:
-  // - Bar 'user-access' (Akses Akun) is strictly reserved for PE (or if PE explicitly assigns 'user-access' to a user)
-  // - Other bars are governed by the allowedTabs configured by PE for each user
+  // Self-registration / Create Account from Login Screen so anyone with an account can access & input
+  const registerAccount = (params: {
+    name: string;
+    usernameOrEmail: string;
+    password: string;
+    role?: UserRole;
+    department?: string;
+  }): { success: boolean; message: string } => {
+    const cleanName = params.name.trim();
+    const cleanInput = params.usernameOrEmail.trim();
+    const cleanPass = params.password.trim();
+
+    if (!cleanName || !cleanInput || !cleanPass) {
+      return { success: false, message: 'Nama lengkap, Email/User, dan Password wajib diisi!' };
+    }
+    if (cleanPass.length < 3) {
+      return { success: false, message: 'Password minimal terdiri dari 3 karakter!' };
+    }
+
+    const lowerInput = cleanInput.toLowerCase();
+    const isEmail = lowerInput.includes('@');
+    const derivedUsername = isEmail ? lowerInput.split('@')[0] : cleanInput;
+    const derivedEmail = isEmail ? lowerInput : `${lowerInput}@terataiwidjaja.co.id`;
+
+    const exists = users.some(
+      u => u.username.toLowerCase() === derivedUsername.toLowerCase() ||
+           u.username.toLowerCase() === lowerInput ||
+           (u.email && u.email.toLowerCase() === lowerInput)
+    );
+    if (exists) {
+      return { success: false, message: `Akun "${cleanInput}" sudah terdaftar. Silakan langsung masuk (Sign In)!` };
+    }
+
+    const assignedRole: UserRole = params.role || 'WAREHOUSE';
+    const defaultTabs = assignedRole === 'SUBCON'
+      ? ['subcon', 'warehouse-stock', 'transactions']
+      : [
+          'new-style',
+          'pe-workflow',
+          'ppic-planning',
+          'cutting',
+          'warehouse-stock',
+          'subcon',
+          'transactions',
+          'spreadsheet',
+          'analytics'
+        ];
+
+    const newUser: UserAccount = {
+      id: `user-${Date.now()}`,
+      username: derivedUsername,
+      password: cleanPass,
+      name: cleanName,
+      role: assignedRole,
+      department: params.department?.trim() || 'Operasional & Gudang Garment',
+      email: derivedEmail,
+      allowedTabs: defaultTabs
+    };
+
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUser(newUser);
+    setIsAuthenticated(true);
+    sessionStorage.setItem('pt_tw_session_auth_v5', 'true');
+    setActiveTab('warehouse-stock');
+
+    return {
+      success: true,
+      message: `Akun "${newUser.name}" berhasil dibuat dan otomatis masuk!`
+    };
+  };
+
+  // Anyone with a logged-in account can access warehouse-stock & their allowed tabs
   const isTabAllowed = (tabId: string): boolean => {
     if (tabId === 'user-access') {
       return currentUser.role === 'PE' || currentUser.allowedTabs.includes('user-access');
+    }
+    if (tabId === 'warehouse-stock') {
+      return true; // Siapa saja yang memiliki akun bisa akses dan menginput stok gudang
     }
     if (currentUser.role === 'PE') {
       return currentUser.allowedTabs.includes(tabId) || tabId === 'user-access';
@@ -1118,8 +1220,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       department: params.department.trim() || 'Operasional Garment',
       email: params.email?.trim() || `${cleanUsername.toLowerCase()}@terataiwidjaja.co.id`,
       allowedTabs: params.allowedTabs && params.allowedTabs.length > 0 
-        ? params.allowedTabs 
-        : ['pe-workflow']
+        ? Array.from(new Set([...params.allowedTabs, 'warehouse-stock']))
+        : ['pe-workflow', 'warehouse-stock']
     };
 
     setUsers(prev => [...prev, newUser]);
@@ -1536,6 +1638,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes: newItem.notes || 'Pemasukan barang baru'
     };
     setTransactions(prev => [newTx, ...prev]);
+  };
+
+  const updateStockItem = (id: string, updates: Partial<Omit<StockItem, 'id'>>) => {
+    const now = new Date();
+    const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}`;
+    setStock(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          ...updates,
+          code: updates.code ? updates.code.trim().toUpperCase() : item.code,
+          name: updates.name ? updates.name.trim() : item.name,
+          lastUpdated: timestamp
+        };
+      }
+      return item;
+    }));
+  };
+
+  const deleteStockItem = (id: string) => {
+    try {
+      const rawDel = localStorage.getItem('pt_tw_deleted_stock_ids');
+      const parsedDel: string[] = rawDel ? JSON.parse(rawDel) : [];
+      if (!parsedDel.includes(id)) {
+        parsedDel.push(id);
+        localStorage.setItem('pt_tw_deleted_stock_ids', JSON.stringify(parsedDel));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setStock(prev => prev.filter(item => item.id !== id));
+    setRequisitionCart(prev => prev.filter(c => c.stockItemId !== id));
   };
 
   const updateStockQuantity = (id: string, qtyDelta: number) => {
@@ -2409,6 +2543,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         isAuthenticated,
         login,
+        registerAccount,
         logout,
         currentUser,
         setCurrentUser,
@@ -2438,7 +2573,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteStyle,
         stock,
         addStockItem,
+        updateStockItem,
         updateStockQuantity,
+        deleteStockItem,
         transactions,
         issueStock,
         requisitionCart,
