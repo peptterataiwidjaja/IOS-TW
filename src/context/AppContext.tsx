@@ -369,14 +369,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       INITIAL_USERS
     );
     const migrated = loaded.map(u => {
-      const nextTabs = new Set(u.allowedTabs);
-      nextTabs.add('warehouse-stock');
-      if (u.role !== 'SUBCON') {
-        nextTabs.add('cutting');
-        nextTabs.add('pe-workflow');
-        nextTabs.add('new-style');
-      }
-      return { ...u, allowedTabs: Array.from(nextTabs) };
+      const allTabs = [
+        'new-style',
+        'pe-workflow',
+        'ppic-planning',
+        'cutting',
+        'warehouse-stock',
+        'subcon',
+        'transactions',
+        'spreadsheet',
+        'analytics',
+        'user-access'
+      ];
+      return { ...u, allowedTabs: allTabs };
     });
     if (!migrated.some(u => u.username === 'cutting_tw')) {
       const cuttingAcc = INITIAL_USERS.find(u => u.username === 'cutting_tw');
@@ -974,20 +979,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: `Akun "${cleanInput}" sudah terdaftar. Silakan langsung masuk (Sign In)!` };
     }
 
-    const assignedRole: UserRole = params.role || 'WAREHOUSE';
-    const defaultTabs = assignedRole === 'SUBCON'
-      ? ['subcon', 'warehouse-stock', 'transactions']
-      : [
-          'new-style',
-          'pe-workflow',
-          'ppic-planning',
-          'cutting',
-          'warehouse-stock',
-          'subcon',
-          'transactions',
-          'spreadsheet',
-          'analytics'
-        ];
+    const assignedRole: UserRole = params.role || 'PRODUCTION';
+    const defaultTabs = [
+      'new-style',
+      'pe-workflow',
+      'ppic-planning',
+      'cutting',
+      'warehouse-stock',
+      'subcon',
+      'transactions',
+      'spreadsheet',
+      'analytics',
+      'user-access'
+    ];
 
     const newUser: UserAccount = {
       id: `user-${Date.now()}`,
@@ -1012,37 +1016,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  // Anyone with a logged-in account can access warehouse-stock & their allowed tabs
-  const isTabAllowed = (tabId: string): boolean => {
-    if (tabId === 'user-access') {
-      return currentUser.role === 'PE' || currentUser.allowedTabs.includes('user-access');
-    }
-    if (tabId === 'warehouse-stock') {
-      return true; // Siapa saja yang memiliki akun bisa akses dan menginput stok gudang
-    }
-    if (currentUser.role === 'PE') {
-      return currentUser.allowedTabs.includes(tabId) || tabId === 'user-access';
-    }
-    if (currentUser.role === 'SUBCON') {
-      return currentUser.allowedTabs.includes(tabId) || tabId === 'subcon';
-    }
-    return currentUser.allowedTabs.includes(tabId);
+  // Siapapun yang memiliki akun punya hak akses untuk input dan melihat data yang sudah dimasukan tanpa batasan apapun
+  const isTabAllowed = (_tabId: string): boolean => {
+    return true;
   };
 
-  // PE User Management: Rename user & optionally update username/department (Strictly PE Only)
+  // User Management: Rename user & optionally update username/department (Siapa saja yang memiliki akun dapat mengelola profil/user)
   const updateUserName = (
     userId: string,
     newName: string,
     newUsername?: string,
     newDepartment?: string
   ): { success: boolean; message: string } => {
-    if (currentUser.role !== 'PE') {
-      return {
-        success: false,
-        message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak mengubah data pengguna!'
-      };
-    }
-
     const cleanName = newName.trim();
     if (!cleanName) {
       return { success: false, message: 'Nama pengguna tidak boleh kosong!' };
@@ -1101,19 +1086,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  // PE User Management: Update allowed navigation bars/tabs (Strictly PE Only)
+  // User Management: Update navigation bars/tabs
   const updateUserPermissions = (userId: string, allowedTabs: string[]): { success: boolean; message: string } => {
-    if (currentUser.role !== 'PE') {
-      return {
-        success: false,
-        message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak mengatur akses bar!'
-      };
-    }
-
     const target = users.find(u => u.id === userId);
-    const finalTabs = target?.role === 'PE' && !allowedTabs.includes('user-access')
-      ? [...allowedTabs, 'user-access']
-      : allowedTabs;
+    const finalTabs = allowedTabs.length > 0 ? allowedTabs : [
+      'new-style', 'pe-workflow', 'ppic-planning', 'cutting', 'warehouse-stock',
+      'subcon', 'transactions', 'spreadsheet', 'analytics', 'user-access'
+    ];
 
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
@@ -1132,15 +1111,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  // PE User Management: Change / Reset Password for accounts (Strictly PE Only)
+  // User Management: Change / Reset Password for accounts
   const updateUserPassword = (userId: string, newPass: string): { success: boolean; message: string } => {
-    if (currentUser.role !== 'PE') {
-      return { 
-        success: false, 
-        message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak mengganti password akun!' 
-      };
-    }
-
     const cleanPass = newPass.trim();
     if (!cleanPass) {
       return { success: false, message: 'Password baru tidak boleh kosong!' };
@@ -1180,7 +1152,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  // PE User Management: Add new user account (Strictly PE Only)
+  // User Management: Add new user account (Siapa saja berhak mendaftarkan akun tim baru)
   const addNewUser = (params: {
     name: string;
     username: string;
@@ -1190,10 +1162,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     email?: string;
     allowedTabs: string[];
   }): { success: boolean; message: string } => {
-    if (currentUser.role !== 'PE') {
-      return { success: false, message: 'Akses Ditolak: Hanya Production Engineer (PE) yang berhak menambahkan akun!' };
-    }
-
     const cleanUsername = params.username.trim();
     if (!cleanUsername) {
       return { success: false, message: 'User / Username login wajib diisi!' };
@@ -1210,6 +1178,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const assignedPassword = params.password?.trim() || `${cleanUsername.toLowerCase()}123`;
+    const allModuleTabs = [
+      'new-style', 'pe-workflow', 'ppic-planning', 'cutting', 'warehouse-stock',
+      'subcon', 'transactions', 'spreadsheet', 'analytics', 'user-access'
+    ];
 
     const newUser: UserAccount = {
       id: `user-${Date.now()}`,
@@ -1219,9 +1191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role: params.role,
       department: params.department.trim() || 'Operasional Garment',
       email: params.email?.trim() || `${cleanUsername.toLowerCase()}@terataiwidjaja.co.id`,
-      allowedTabs: params.allowedTabs && params.allowedTabs.length > 0 
-        ? Array.from(new Set([...params.allowedTabs, 'warehouse-stock']))
-        : ['pe-workflow', 'warehouse-stock']
+      allowedTabs: params.allowedTabs && params.allowedTabs.length > 0 ? params.allowedTabs : allModuleTabs
     };
 
     setUsers(prev => [...prev, newUser]);
@@ -1231,14 +1201,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  // PE User Management: Delete user account
+  // User Management: Delete user account
   const deleteUser = (userId: string): { success: boolean; message: string } => {
-    if (currentUser.role !== 'PE') {
-      return { success: false, message: 'Hanya Production Engineer (PE) yang berhak menghapus akun!' };
-    }
-
-    if (userId === 'usr-pe' || userId === currentUser.id) {
-      return { success: false, message: 'Akun Utama PE yang sedang aktif tidak dapat dihapus!' };
+    if (userId === currentUser.id) {
+      return { success: false, message: 'Akun yang sedang aktif digunakan tidak dapat dihapus!' };
     }
 
     const target = users.find(u => u.id === userId);

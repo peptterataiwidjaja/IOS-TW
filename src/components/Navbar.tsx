@@ -81,19 +81,19 @@ export const Navbar: React.FC = () => {
     },
     { 
       id: 'subcon', 
-      label: currentUser.role === 'SUBCON' ? 'Input Subkon' : 'Subkon', 
+      label: 'Subkon', 
       icon: Truck,
-      badge: currentUser.role !== 'SUBCON' && subconWarnings.length > 0 ? `${subconWarnings.length}` : undefined,
+      badge: subconWarnings.length > 0 ? `${subconWarnings.length}` : undefined,
       badgeColor: 'bg-red-600 text-white'
     },
     { id: 'transactions', label: 'Mutasi', icon: FileText },
     { id: 'spreadsheet', label: 'Tabel', icon: Table2 },
     { id: 'analytics', label: 'Analitik', icon: BarChart3 },
-    { id: 'user-access', label: 'Akses', icon: ShieldCheck },
+    { id: 'user-access', label: 'Akses Akun', icon: ShieldCheck },
   ];
 
-  // Filter navigation items strictly according to user permissions
-  const visibleNavItems = allNavItems.filter(item => isTabAllowed(item.id));
+  // All navigation items are open to anyone who has an account
+  const visibleNavItems = allNavItems;
 
   // Handle Logo Upload from Image File
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,35 +159,31 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Center: Compact Active Style Selector + Quick Add Style Button (Hidden for SUBCON) */}
-          {currentUser.role !== 'SUBCON' && (
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-              <Layers2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-              <span className="text-[11px] text-slate-500 hidden md:inline font-medium">Style Aktif:</span>
-              <select
-                value={selectedStyleId}
-                onChange={(e) => setSelectedStyleId(e.target.value)}
-                className="bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer max-w-[170px] sm:max-w-[240px] truncate"
-              >
-                {styles.map(style => (
-                  <option key={style.id} value={style.id}>
-                    {style.code} — {style.name} ({style.targetQuantityPcs.toLocaleString()} pcs)
-                  </option>
-                ))}
-              </select>
-              {isTabAllowed('new-style') && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('new-style')}
-                  className="px-2 py-1 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
-                  title="Tambah Model / Style Produksi Baru"
-                >
-                  <PlusCircle className="w-3 h-3" />
-                  <span className="hidden sm:inline">+ Model</span>
-                </button>
-              )}
-            </div>
-          )}
+          {/* Center: Compact Active Style Selector + Quick Add Style Button */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
+            <Layers2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+            <span className="text-[11px] text-slate-500 hidden md:inline font-medium">Style Aktif:</span>
+            <select
+              value={selectedStyleId}
+              onChange={(e) => setSelectedStyleId(e.target.value)}
+              className="bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer max-w-[170px] sm:max-w-[240px] truncate"
+            >
+              {styles.map(style => (
+                <option key={style.id} value={style.id}>
+                  {style.code} — {style.name} ({style.targetQuantityPcs.toLocaleString()} pcs)
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setActiveTab('new-style')}
+              className="px-2 py-1 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+              title="Tambah Model / Style Produksi Baru"
+            >
+              <PlusCircle className="w-3 h-3" />
+              <span className="hidden sm:inline">+ Model</span>
+            </button>
+          </div>
 
           {/* Right: User Account Switcher, Print PDF & Notifications */}
           <div className="flex items-center gap-2 justify-end">
@@ -212,19 +208,17 @@ export const Navbar: React.FC = () => {
               <span className="hidden md:inline">Keluar</span>
             </button>
 
-            {currentUser.role !== 'SUBCON' && (
-              <>
-                <button
-                  onClick={() => openPrintModal(activeTab)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
-                  title="Cetak dokumen PDF"
-                >
-                  <Printer className="w-3.5 h-3.5 text-slate-300" />
-                  <span className="hidden sm:inline">Cetak PDF</span>
-                </button>
+            <button
+              onClick={() => openPrintModal(activeTab)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
+              title="Cetak dokumen PDF"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-300" />
+              <span className="hidden sm:inline">Cetak PDF</span>
+            </button>
 
-                {/* Notification Bell (Only for Internal Accounts, NOT for SUBCON) */}
-                <div className="relative">
+            {/* Notification Bell */}
+            <div className="relative">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
@@ -336,8 +330,6 @@ export const Navbar: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </>
-            )}
           </div>
 
         </div>

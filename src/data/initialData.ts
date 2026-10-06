@@ -22,7 +22,20 @@ export const ALL_NAV_TABS: NavTabPermission[] = [
   { id: 'transactions', label: 'Riwayat Mutasi', description: 'Pelacakan mutasi barang & penanggung jawab PIC' },
   { id: 'spreadsheet', label: 'Spreadsheet', description: 'Tampilan tabel terpadu mirip Google Sheet / Excel (.xlsx)' },
   { id: 'analytics', label: 'Analitik', description: 'Grafik performa efisiensi produksi, gudang & subkon' },
-  { id: 'user-access', label: 'Akses Akun', description: 'Khusus PE: Tambah/hapus akun, ganti nama pengguna & atur akses bar yang tersedia' }
+  { id: 'user-access', label: 'Akses Akun', description: 'Kelola akun pengguna, tambah/hapus akun, ganti nama & kolaborasi tim' }
+];
+
+const FULL_ACCESS_TABS = [
+  'new-style',
+  'pe-workflow',
+  'ppic-planning',
+  'cutting',
+  'warehouse-stock',
+  'subcon',
+  'transactions',
+  'spreadsheet',
+  'analytics',
+  'user-access'
 ];
 
 export const INITIAL_USERS: UserAccount[] = [
@@ -34,18 +47,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'PE',
     department: 'Production Engineering',
     email: 'pe.terataiwidjaja@gmail.com',
-    allowedTabs: [
-      'new-style',
-      'pe-workflow',
-      'ppic-planning',
-      'cutting',
-      'warehouse-stock',
-      'subcon',
-      'transactions',
-      'spreadsheet',
-      'analytics',
-      'user-access'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   },
   {
     id: 'usr-wh',
@@ -55,12 +57,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'WAREHOUSE',
     department: 'Gudang Bahan Baku & Aksesoris',
     email: 'warehouse.tw@terataiwidjaja.co.id',
-    allowedTabs: [
-      'warehouse-stock',
-      'cutting',
-      'transactions',
-      'spreadsheet'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   },
   {
     id: 'usr-fm',
@@ -70,17 +67,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'FACTORY_MANAGER',
     department: 'Plant & Factory Management',
     email: 'factory.manager@terataiwidjaja.co.id',
-    allowedTabs: [
-      'new-style',
-      'pe-workflow',
-      'warehouse-stock',
-      'ppic-planning',
-      'cutting',
-      'subcon',
-      'transactions',
-      'spreadsheet',
-      'analytics'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   },
   {
     id: 'usr-ppic',
@@ -90,17 +77,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'PPIC',
     department: 'PPIC & Inventory Control',
     email: 'ppic@terataiwidjaja.co.id',
-    allowedTabs: [
-      'new-style',
-      'pe-workflow',
-      'ppic-planning',
-      'cutting',
-      'warehouse-stock',
-      'subcon',
-      'transactions',
-      'spreadsheet',
-      'analytics'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   },
   {
     id: 'usr-prod',
@@ -110,14 +87,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'PRODUCTION',
     department: 'Cutting & Sewing Floor',
     email: 'produksi.spv@terataiwidjaja.co.id',
-    allowedTabs: [
-      'pe-workflow',
-      'ppic-planning',
-      'cutting',
-      'subcon',
-      'transactions',
-      'spreadsheet'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   },
   {
     id: 'usr-cutting',
@@ -127,13 +97,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'PRODUCTION',
     department: 'Divisi Cutting & Bundling',
     email: 'cutting@terataiwidjaja.co.id',
-    allowedTabs: [
-      'cutting',
-      'ppic-planning',
-      'pe-workflow',
-      'warehouse-stock',
-      'transactions'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   },
   {
     id: 'usr-subcon',
@@ -143,10 +107,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'SUBCON',
     department: 'Mitra Rekanan Subkon (Bordir)',
     email: 'subcon.prima@gmail.com',
-    allowedTabs: [
-      'subcon',
-      'warehouse-stock'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   },
   {
     id: 'usr-subcon-2',
@@ -156,10 +117,7 @@ export const INITIAL_USERS: UserAccount[] = [
     role: 'SUBCON',
     department: 'Mitra Rekanan Subkon (Sablon)',
     email: 'admin@multiscreen.co.id',
-    allowedTabs: [
-      'subcon',
-      'warehouse-stock'
-    ]
+    allowedTabs: [...FULL_ACCESS_TABS]
   }
 ];
 

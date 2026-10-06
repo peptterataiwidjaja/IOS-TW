@@ -379,7 +379,7 @@ export const UserAccessManagerView: React.FC = () => {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Kelola Akun (PE)
+            Kelola Akun &amp; Tim
           </button>
 
           <button
@@ -439,28 +439,12 @@ export const UserAccessManagerView: React.FC = () => {
         </div>
       )}
 
-      {/* ----------------- TAB 1: KELOLA AKUN & AKSES BAR (KHUSUS PE) ----------------- */}
+      {/* ----------------- TAB 1: KELOLA AKUN & AKSES BAR ----------------- */}
       {mainSubTab === 'pe-permissions' && (
         <div className="space-y-5">
-          {!isPE ? (
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center max-w-xl mx-auto space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center mx-auto">
-                <Lock className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Akses Dibatasi: Hanya untuk Production Engineer (PE)
-                </h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                  Hanya akun <strong>PE</strong> yang dapat menambahkan/menghapus akun serta mengganti nama dan akses bar yang tersedia.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              
-              {/* Left Sidebar (4 cols): User List + Add Button */}
-              <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-xs p-4 space-y-3 h-fit">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Left Sidebar (4 cols): User List + Add Button */}
+            <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-xs p-4 space-y-3 h-fit">
                 <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
                   <div>
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
@@ -932,7 +916,6 @@ export const UserAccessManagerView: React.FC = () => {
               </div>
 
             </div>
-          )}
         </div>
       )}
 

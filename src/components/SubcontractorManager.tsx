@@ -51,17 +51,8 @@ export const SubcontractorManager: React.FC = () => {
     openPrintModal 
   } = useApp();
 
-  // Main View Mode: 'MONITORING' (PE/PPIC/FM Analysis & Table) vs 'SUBCON_PORTAL' (Dedicated Subcon Daily Input)
-  const [viewMode, setViewMode] = useState<'MONITORING' | 'SUBCON_PORTAL'>(
-    currentUser.role === 'SUBCON' ? 'SUBCON_PORTAL' : 'MONITORING'
-  );
-
-  // Sync viewMode automatically when switching user role to SUBCON
-  useEffect(() => {
-    if (currentUser.role === 'SUBCON') {
-      setViewMode('SUBCON_PORTAL');
-    }
-  }, [currentUser.role]);
+  // Main View Mode: 'MONITORING' vs 'SUBCON_PORTAL' (All users have full access to both)
+  const [viewMode, setViewMode] = useState<'MONITORING' | 'SUBCON_PORTAL'>('MONITORING');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filterTab, setFilterTab] = useState<'ALL' | 'WARNING_H3' | 'WIP' | 'DISCREPANCY' | 'COMPLETED'>('ALL');
@@ -86,17 +77,8 @@ export const SubcontractorManager: React.FC = () => {
   // SUBCON DAILY INPUT FORM STATE (Portal Input Harian Subkon)
   // ============================================================================
   const availablePortalTasks = useMemo(() => {
-    if (currentUser.role === 'SUBCON') {
-      const matched = subconTasks.filter(
-        t =>
-          t.subconAccountId === currentUser.id ||
-          t.subconUsername?.toLowerCase() === currentUser.username.toLowerCase() ||
-          t.subconName.toLowerCase().includes(currentUser.name.toLowerCase())
-      );
-      return matched.length > 0 ? matched : subconTasks.filter(t => t.status !== 'Completed');
-    }
     return subconTasks;
-  }, [subconTasks, currentUser]);
+  }, [subconTasks]);
 
   const [selectedPortalTaskId, setSelectedPortalTaskId] = useState<string>(
     availablePortalTasks[0]?.id || subconTasks[0]?.id || ''
@@ -495,93 +477,91 @@ export const SubcontractorManager: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* TOP HEADER & MODE SWITCHER (INTERNAL / PE ONLY — HIDDEN FOR SUBCON)       */}
+      {/* TOP HEADER & MODE SWITCHER                                                */}
       {/* ========================================================================= */}
-      {currentUser.role !== 'SUBCON' && (
-        <div className="bg-white rounded-xl p-4 border border-slate-200">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <h1 className="text-base font-bold text-slate-900">
-              Subkon &amp; Target Harian
-            </h1>
+      <div className="bg-white rounded-xl p-4 border border-slate-200">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <h1 className="text-base font-bold text-slate-900">
+            Subkon &amp; Target Harian
+          </h1>
 
-            <div className="flex items-center gap-2 flex-wrap shrink-0">
-              {/* Switch Mode: Monitoring vs Portal Input Harian Subkon */}
-              <div className="bg-slate-100 p-1 rounded-lg border border-slate-200 flex items-center gap-1">
-                <button
-                  onClick={() => setViewMode('MONITORING')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === 'MONITORING'
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  <span>Monitoring SPK</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('SUBCON_PORTAL')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === 'SUBCON_PORTAL'
-                      ? 'bg-cyan-700 text-white shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Activity className="w-3.5 h-3.5" />
-                  <span>Input Harian</span>
-                </button>
-              </div>
-
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            {/* Switch Mode: Monitoring vs Portal Input Harian Subkon */}
+            <div className="bg-slate-100 p-1 rounded-lg border border-slate-200 flex items-center gap-1">
               <button
-                onClick={() => openPrintModal('subcon')}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                title="Cetak PDF"
+                onClick={() => setViewMode('MONITORING')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'MONITORING'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <Printer className="w-4 h-4" />
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>Monitoring SPK</span>
               </button>
-
               <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                onClick={() => setViewMode('SUBCON_PORTAL')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'SUBCON_PORTAL'
+                    ? 'bg-cyan-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>SPK Subkon</span>
+                <Activity className="w-3.5 h-3.5" />
+                <span>Input Harian</span>
               </button>
             </div>
-          </div>
 
-          {/* Summary KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-3.5 border-t border-slate-100">
-            <div>
-              <div className="text-[11px] text-slate-500">Warning H-3</div>
-              <div className="text-xl font-bold text-red-600 tabular-nums mt-0.5">
-                {subconWarnings.length} SPK
-              </div>
-            </div>
+            <button
+              onClick={() => openPrintModal('subcon')}
+              className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+              title="Cetak PDF"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
 
-            <div>
-              <div className="text-[11px] text-slate-500">SPK Aktif</div>
-              <div className="text-xl font-bold text-cyan-700 tabular-nums mt-0.5">{activeWIPCount} SPK</div>
-            </div>
-
-            <div>
-              <div className="text-[11px] text-slate-500">Temuan QC</div>
-              <div className={`text-xl font-bold tabular-nums mt-0.5 ${discrepancyCount > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
-                {discrepancyCount} Kasus
-              </div>
-            </div>
-
-            <div>
-              <div className="text-[11px] text-slate-500">Total Kontrak</div>
-              <div className="text-xl font-bold text-slate-900 tabular-nums mt-0.5">Rp {totalCostAllSubcon.toLocaleString('id-ID')}</div>
-            </div>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>SPK Subkon</span>
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Summary KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-3.5 border-t border-slate-100">
+          <div>
+            <div className="text-[11px] text-slate-500">Warning H-3</div>
+            <div className="text-xl font-bold text-red-600 tabular-nums mt-0.5">
+              {subconWarnings.length} SPK
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[11px] text-slate-500">SPK Aktif</div>
+            <div className="text-xl font-bold text-cyan-700 tabular-nums mt-0.5">{activeWIPCount} SPK</div>
+          </div>
+
+          <div>
+            <div className="text-[11px] text-slate-500">Temuan QC</div>
+            <div className={`text-xl font-bold tabular-nums mt-0.5 ${discrepancyCount > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
+              {discrepancyCount} Kasus
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[11px] text-slate-500">Total Kontrak</div>
+            <div className="text-xl font-bold text-slate-900 tabular-nums mt-0.5">Rp {totalCostAllSubcon.toLocaleString('id-ID')}</div>
+          </div>
+        </div>
+      </div>
 
       {/* ========================================================================= */}
-      {/* PERINGATAN DINI H-3 (ONLY FOR INTERNAL / PE — HIDDEN FOR SUBCON)          */}
+      {/* PERINGATAN DINI H-3                                                       */}
       {/* ========================================================================= */}
-      {currentUser.role !== 'SUBCON' && subconWarnings.length > 0 && (
+      {subconWarnings.length > 0 && (
         <div className="bg-red-50/70 rounded-xl p-3.5 border border-red-200 space-y-2.5">
           <div className="flex items-center gap-2 text-xs font-bold text-red-800">
             <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />

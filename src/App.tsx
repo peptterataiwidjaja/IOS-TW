@@ -47,8 +47,8 @@ const MainLayout: React.FC = () => {
     return <LoginScreen />;
   }
 
-  // Check if current tab is permitted for active user
-  const tabPermitted = isTabAllowed(activeTab);
+  // Check if current tab is permitted for active user - all authenticated accounts have full access
+  const tabPermitted = true;
 
   const renderActiveModule = () => {
     if (!tabPermitted) {
