@@ -1,0 +1,39 @@
+{
+  "apiKeys": [
+    {
+      "id": "key-master-prod",
+      "name": "Master API Key Produksi (Semua Akses)",
+      "key": "IOS-TW-PROD-LIVE-KEY-2026",
+      "role": "ADMIN_MULTIUSER",
+      "createdAt": "2026-10-13T01:59:42.070Z",
+      "description": "Kunci API utama untuk akses bersama, input data, dan sinkronisasi real-time seluruh tim."
+    }
+  ],
+  "lastUpdated": "2026-10-13T02:04:34.700Z",
+  "styles": [],
+  "stock": [
+    {
+      "id": "stk-1791857074700",
+      "code": "MAT-8762",
+      "name": "Kain Twill Stretch Khaki",
+      "category": "Kain Utama (Fabric)",
+      "styleCode": "ALL",
+      "styleName": "Umum",
+      "currentStock": 320,
+      "minStockLevel": 40,
+      "unit": "Yard",
+      "rackLocation": "Gudang A-12",
+      "unitPrice": 52000,
+      "supplier": "PT Sritex",
+      "lastUpdated": "2026-10-13",
+      "notes": "Input via API Key oleh Tes Integrasi API"
+    }
+  ],
+  "transactions": [],
+  "cashFlow": [],
+  "subconTasks": [],
+  "componentAllocations": [],
+  "productionMaterials": [],
+  "cuttingOrders": [],
+  "users": []
+}

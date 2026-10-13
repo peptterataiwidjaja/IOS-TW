@@ -17,7 +17,8 @@ import {
   PlusCircle,
   UserCheck,
   LogOut,
-  Scissors
+  Scissors,
+  Key
 } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 
@@ -40,7 +41,8 @@ export const Navbar: React.FC = () => {
     companyLogo,
     setCompanyLogo,
     openPrintModal,
-    requisitionCart
+    requisitionCart,
+    setIsApiKeyModalOpen
   } = useApp();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -206,6 +208,16 @@ export const Navbar: React.FC = () => {
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Keluar</span>
+            </button>
+
+            <button
+              onClick={() => setIsApiKeyModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              title="Kunci API & Akses Multi-User Terpusat"
+            >
+              <Key className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">API Key</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Cloud Server Terhubung"></span>
             </button>
 
             <button

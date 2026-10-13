@@ -12,6 +12,7 @@ import { StockIssueModal } from './components/StockIssueModal';
 import { NewStyleModal } from './components/NewStyleModal';
 import { UserAccessManagerModal } from './components/UserAccessManagerModal';
 import { GoogleScriptSyncModal } from './components/GoogleScriptSyncModal';
+import { ApiKeyModal } from './components/ApiKeyModal';
 import { PEWorkflowTracker } from './components/PEWorkflowTracker';
 import { NewStyleInputView } from './components/NewStyleInputView';
 import { WarehouseStockManager } from './components/WarehouseStockManager';
@@ -126,6 +127,7 @@ const MainLayout: React.FC = () => {
         <NewStyleModal />
         <UserAccessManagerModal />
         <GoogleScriptSyncModal />
+        <ApiKeyModal />
         <StockIssueModal 
           isOpen={isIssueStockModalOpen}
           onClose={() => setIsIssueStockModalOpen(false)}

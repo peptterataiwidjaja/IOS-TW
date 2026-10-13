@@ -5,6 +5,7 @@ import { UserRole } from '../types';
 import { 
   ShieldCheck, 
   KeyRound, 
+  Key,
   Lock, 
   Eye, 
   EyeOff, 
@@ -47,7 +48,8 @@ export const UserAccessManagerView: React.FC = () => {
     setGasUrl,
     lastSyncedGas,
     syncToGoogleScript,
-    openPrintModal
+    openPrintModal,
+    setIsApiKeyModalOpen
   } = useApp();
 
   const isPE = currentUser.role === 'PE';
@@ -413,6 +415,16 @@ export const UserAccessManagerView: React.FC = () => {
             }`}
           >
             Logo
+          </button>
+
+          <button
+            onClick={() => setIsApiKeyModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer whitespace-nowrap"
+            title="Kelola & Salin API Key Multi-User"
+          >
+            <Key className="w-3.5 h-3.5 text-blue-600" />
+            <span>Kunci API</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           </button>
 
           <button

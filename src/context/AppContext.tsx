@@ -214,6 +214,16 @@ interface AppContextType {
   setGasUrl: (url: string) => void;
   lastSyncedGas?: string;
   syncToGoogleScript: () => Promise<{ success: boolean; message: string }>;
+
+  // Central API Key & Multi-User Cloud Sync
+  apiKey: string;
+  setApiKey: (key: string) => void;
+  isApiKeyModalOpen: boolean;
+  setIsApiKeyModalOpen: (open: boolean) => void;
+  serverStatus: 'connected' | 'syncing' | 'offline' | 'error';
+  lastServerSync: string | null;
+  syncWithServer: () => Promise<void>;
+  sendApiInput: (action: string, payload: any, sender?: string) => Promise<{ success: boolean; message: string; data?: any }>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -498,6 +508,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isUserAccessModalOpen, setIsUserAccessModalOpen] = useState<boolean>(false);
   const [isGoogleScriptModalOpen, setIsGoogleScriptModalOpen] = useState<boolean>(false);
   const [isIssueStockModalOpen, setIsIssueStockModalOpen] = useState<boolean>(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
+
+  // Central API Key & Cloud Multi-User Sync State
+  const [apiKey, setApiKeyState] = useState<string>(() => {
+    return localStorage.getItem('pt_tw_api_key') || 'IOS-TW-PROD-LIVE-KEY-2026';
+  });
+
+  const setApiKey = (newKey: string) => {
+    setApiKeyState(newKey);
+    localStorage.setItem('pt_tw_api_key', newKey);
+  };
+
+  const [serverStatus, setServerStatus] = useState<'connected' | 'syncing' | 'offline' | 'error'>('connected');
+  const [lastServerSync, setLastServerSync] = useState<string | null>(() => {
+    return localStorage.getItem('pt_tw_last_server_sync') || null;
+  });
 
   // Requisition Cart State (Pengambilan Barang Berbasis Keranjang Sesuai Style)
   const [requisitionCart, setRequisitionCart] = useState<RequisitionCartItem[]>(() => {
@@ -2504,6 +2530,105 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Central Server Multi-User Synchronization
+  const syncWithServer = async (): Promise<void> => {
+    try {
+      setServerStatus('syncing');
+      const payload = {
+        styles,
+        stock,
+        transactions,
+        cashFlow,
+        subconTasks,
+        componentAllocations,
+        productionMaterials,
+        cuttingOrders,
+        users
+      };
+
+      const res = await fetch('/api/v1/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server status ${res.status}`);
+      }
+
+      const result = await res.json();
+      if (result.success && result.data) {
+        const d = result.data;
+        if (Array.isArray(d.styles) && d.styles.length > 0) setStyles(d.styles);
+        if (Array.isArray(d.stock)) setStock(d.stock);
+        if (Array.isArray(d.transactions) && d.transactions.length > 0) setTransactions(d.transactions);
+        if (Array.isArray(d.cashFlow) && d.cashFlow.length > 0) setCashFlow(d.cashFlow);
+        if (Array.isArray(d.subconTasks) && d.subconTasks.length > 0) setSubconTasks(d.subconTasks);
+        if (Array.isArray(d.componentAllocations) && d.componentAllocations.length > 0) setComponentAllocations(d.componentAllocations);
+        if (Array.isArray(d.productionMaterials) && d.productionMaterials.length > 0) setProductionMaterials(d.productionMaterials);
+        if (Array.isArray(d.cuttingOrders) && d.cuttingOrders.length > 0) setCuttingOrders(d.cuttingOrders);
+        if (Array.isArray(d.users) && d.users.length > 0) setUsers(d.users);
+
+        const now = new Date().toISOString();
+        setLastServerSync(now);
+        localStorage.setItem('pt_tw_last_server_sync', now);
+        setServerStatus('connected');
+      }
+    } catch (err) {
+      console.warn('[Sync Error]', err);
+      setServerStatus('error');
+    }
+  };
+
+  const sendApiInput = async (action: string, payload: any, sender?: string): Promise<{ success: boolean; message: string; data?: any }> => {
+    try {
+      const res = await fetch('/api/v1/input', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          action,
+          payload,
+          sender: sender || currentUser?.name || 'User'
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await syncWithServer();
+        return { success: true, message: data.message, data: data.data };
+      } else {
+        return { success: false, message: data.message || 'Gagal memproses input via API' };
+      }
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Koneksi API gagal' };
+    }
+  };
+
+  // Auto-sync with central server on mount & interval for multi-user collaboration
+  useEffect(() => {
+    syncWithServer();
+
+    const interval = setInterval(() => {
+      syncWithServer();
+    }, 15000);
+
+    const onFocus = () => {
+      syncWithServer();
+    };
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [apiKey]);
+
   return (
     <AppContext.Provider
       value={{
@@ -2593,7 +2718,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         gasUrl,
         setGasUrl,
         lastSyncedGas,
-        syncToGoogleScript
+        syncToGoogleScript,
+        apiKey,
+        setApiKey,
+        isApiKeyModalOpen,
+        setIsApiKeyModalOpen,
+        serverStatus,
+        lastServerSync,
+        syncWithServer,
+        sendApiInput
       }}
     >
       {children}
